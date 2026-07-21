@@ -54,6 +54,36 @@ export interface Meta {
   ativo: boolean;
 }
 
+export interface Config {
+  preco_combustivel: number;
+  consumo_km_l: number;
+  manutencao_por_km: number;
+  custo_fixo_diario: number;
+  meta_lucro_por_km: number;
+  custo_por_km: number;
+}
+
+export interface ValeAPena {
+  valor: number;
+  km: number;
+  custo_estimado: number;
+  lucro_estimado: number;
+  valor_por_km: number;
+  custo_por_km: number;
+  veredito: "prejuizo" | "ok" | "otimo";
+  r_por_hora: number | null;
+}
+
+export interface PlataformaComparacao {
+  plataforma: string;
+  total: number;
+  num_corridas: number;
+  km: number;
+  r_por_corrida: number;
+  r_por_km: number;
+  percentual: number;
+}
+
 export interface DashboardResumo {
   periodo: string;
   inicio: string;

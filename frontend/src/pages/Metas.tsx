@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import Page from "../components/Page";
 import Sheet from "../components/Sheet";
 import { api } from "../lib/api";
-import { useAuth } from "../lib/auth";
 import { brl } from "../lib/format";
 import type { Meta } from "../lib/types";
 
@@ -13,7 +12,6 @@ const periodos = [
 ] as const;
 
 export default function Metas() {
-  const { logout, user } = useAuth();
   const [lista, setLista] = useState<Meta[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [aberto, setAberto] = useState(false);
@@ -86,17 +84,6 @@ export default function Metas() {
           </div>
         ))
       )}
-
-      <div className="section-title" style={{ marginTop: 34 }}>
-        <h3>Conta</h3>
-      </div>
-      <div className="card">
-        <div style={{ fontWeight: 600 }}>{user?.nome}</div>
-        <div style={{ color: "var(--text-dim)", fontSize: 13, marginTop: 2 }}>{user?.email}</div>
-        <button className="btn ghost block" style={{ marginTop: 16 }} onClick={logout}>
-          Sair da conta
-        </button>
-      </div>
 
       <Sheet open={aberto} title="Nova meta" onClose={() => setAberto(false)}>
         <form onSubmit={salvar}>

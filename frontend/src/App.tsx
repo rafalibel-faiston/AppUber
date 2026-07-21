@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Corridas from "./pages/Corridas";
 import Gastos from "./pages/Gastos";
 import Metas from "./pages/Metas";
+import Ajustes from "./pages/Ajustes";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -58,6 +59,14 @@ export default function App() {
             element={
               <Protected>
                 <Metas />
+              </Protected>
+            }
+          />
+          <Route
+            path="/ajustes"
+            element={
+              <Protected>
+                <Ajustes />
               </Protected>
             }
           />

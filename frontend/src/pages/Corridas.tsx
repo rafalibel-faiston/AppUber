@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Page from "../components/Page";
+import Sheet from "../components/Sheet";
 import { api } from "../lib/api";
 import { brl, hojeISO } from "../lib/format";
-import type { Corrida, Turno } from "../lib/types";
+import type { Corrida, Turno, ValeAPena } from "../lib/types";
 
 function paraDate(iso: string): Date {
   return new Date(iso.endsWith("Z") || iso.includes("+") ? iso : iso + "Z");
@@ -41,6 +42,14 @@ export default function Corridas() {
   const [turno, setTurno] = useState<Turno | null>(null);
   const [agora, setAgora] = useState(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // "Vale a pena?"
+  const [vpAberto, setVpAberto] = useState(false);
+  const [vpValor, setVpValor] = useState("");
+  const [vpKm, setVpKm] = useState("");
+  const [vpMin, setVpMin] = useState("");
+  const [vpRes, setVpRes] = useState<ValeAPena | null>(null);
+  const [vpLoad, setVpLoad] = useState(false);
 
   useEffect(() => {
     api
@@ -99,6 +108,37 @@ export default function Corridas() {
     await api.del(`/corridas/${id}`);
     setLista((l) => l.filter((c) => c.id !== id));
   }
+
+  async function calcularVale() {
+    const v = parseFloat(vpValor.replace(",", "."));
+    const k = parseFloat(vpKm.replace(",", "."));
+    if (!v || !k || v <= 0 || k <= 0) return;
+    setVpLoad(true);
+    try {
+      const res = await api.post<ValeAPena>("/config/vale-a-pena", {
+        valor: v,
+        km: k,
+        minutos: parseFloat(vpMin.replace(",", ".")) || null,
+      });
+      setVpRes(res);
+    } finally {
+      setVpLoad(false);
+    }
+  }
+
+  function abrirVale() {
+    setVpRes(null);
+    setVpValor("");
+    setVpKm("");
+    setVpMin("");
+    setVpAberto(true);
+  }
+
+  const veredito = {
+    otimo: { selo: "🟢", tit: "Vale a pena!" },
+    ok: { selo: "🟡", tit: "Dá pra aceitar" },
+    prejuizo: { selo: "🔴", tit: "É prejuízo" },
+  };
 
   return (
     <Page>
@@ -196,6 +236,10 @@ export default function Corridas() {
         <span>km da corrida (opcional)</span>
       </div>
 
+      <button className="vp-trigger" onClick={abrirVale}>
+        🤔 Vale a pena? — calcule antes de aceitar
+      </button>
+
       {/* Lista do dia */}
       <div className="section-title">
         <h3>Corridas de hoje</h3>
@@ -236,6 +280,73 @@ export default function Corridas() {
           ))}
         </AnimatePresence>
       )}
+
+      <Sheet open={vpAberto} title="Vale a pena aceitar?" onClose={() => setVpAberto(false)}>
+        <div className="field-row">
+          <div className="field">
+            <label>Valor oferecido (R$)</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={vpValor}
+              onChange={(e) => setVpValor(e.target.value.replace(/[^0-9.,]/g, ""))}
+              placeholder="0,00"
+              autoFocus
+            />
+          </div>
+          <div className="field">
+            <label>Distância (km)</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={vpKm}
+              onChange={(e) => setVpKm(e.target.value.replace(/[^0-9.,]/g, ""))}
+              placeholder="0"
+            />
+          </div>
+        </div>
+        <div className="field">
+          <label>Tempo estimado (min) — opcional</label>
+          <input
+            type="text"
+            inputMode="decimal"
+            value={vpMin}
+            onChange={(e) => setVpMin(e.target.value.replace(/[^0-9.,]/g, ""))}
+            placeholder="Ex: 15"
+          />
+        </div>
+
+        {vpRes && (
+          <>
+            <div className={`veredito ${vpRes.veredito}`}>
+              <div className="selo">{veredito[vpRes.veredito].selo}</div>
+              <div className="tit">{veredito[vpRes.veredito].tit}</div>
+              <div className="det">
+                Lucro estimado <b>{brl(vpRes.lucro_estimado)}</b>
+                {vpRes.r_por_hora ? ` · ${brl(vpRes.r_por_hora)}/h` : ""}
+              </div>
+            </div>
+            <div className="vp-linhas">
+              <div className="vp-linha">
+                <span>Você ganha por km</span>
+                <b>{brl(vpRes.valor_por_km)}</b>
+              </div>
+              <div className="vp-linha">
+                <span>Seu custo por km</span>
+                <b>{brl(vpRes.custo_por_km)}</b>
+              </div>
+              <div className="vp-linha">
+                <span>Custo total da corrida</span>
+                <b>{brl(vpRes.custo_estimado)}</b>
+              </div>
+            </div>
+          </>
+        )}
+
+        <button className="btn primary" disabled={vpLoad} style={{ marginTop: 16 }} onClick={calcularVale}>
+          {vpLoad ? "Calculando..." : vpRes ? "Calcular de novo" : "Calcular"}
+        </button>
+      </Sheet>
     </Page>
   );
 }

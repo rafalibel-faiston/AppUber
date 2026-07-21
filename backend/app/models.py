@@ -60,6 +60,20 @@ class Corrida(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class Config(Base):
+    """Configuracao de custos do motorista (por usuario)."""
+    __tablename__ = "configs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    usuario_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), unique=True, index=True)
+
+    preco_combustivel: Mapped[float] = mapped_column(Float, default=5.80)   # R$/litro
+    consumo_km_l: Mapped[float] = mapped_column(Float, default=10.0)        # km por litro
+    manutencao_por_km: Mapped[float] = mapped_column(Float, default=0.15)   # desgaste R$/km
+    custo_fixo_diario: Mapped[float] = mapped_column(Float, default=0.0)    # aluguel/parcela por dia
+    meta_lucro_por_km: Mapped[float] = mapped_column(Float, default=0.0)    # opcional: alvo R$/km
+
+
 class Turno(Base):
     """Turno de trabalho — cronometro. Fonte real das horas trabalhadas."""
     __tablename__ = "turnos"

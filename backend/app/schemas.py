@@ -87,6 +87,52 @@ class CorridasHoje(BaseModel):
     por_plataforma: dict[str, float]
 
 
+# ----- Config / custo real -----
+class ConfigOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    preco_combustivel: float
+    consumo_km_l: float
+    manutencao_por_km: float
+    custo_fixo_diario: float
+    meta_lucro_por_km: float
+    custo_por_km: float = 0.0  # calculado: combustivel/consumo + manutencao
+
+
+class ConfigUpdate(BaseModel):
+    preco_combustivel: float | None = Field(default=None, gt=0)
+    consumo_km_l: float | None = Field(default=None, gt=0)
+    manutencao_por_km: float | None = Field(default=None, ge=0)
+    custo_fixo_diario: float | None = Field(default=None, ge=0)
+    meta_lucro_por_km: float | None = Field(default=None, ge=0)
+
+
+class ValeAPenaIn(BaseModel):
+    valor: float = Field(gt=0)
+    km: float = Field(gt=0)
+    minutos: float | None = Field(default=None, ge=0)
+
+
+class ValeAPenaOut(BaseModel):
+    valor: float
+    km: float
+    custo_estimado: float
+    lucro_estimado: float
+    valor_por_km: float
+    custo_por_km: float
+    veredito: str  # "prejuizo" | "ok" | "otimo"
+    r_por_hora: float | None = None
+
+
+class PlataformaComparacao(BaseModel):
+    plataforma: str
+    total: float
+    num_corridas: int
+    km: float
+    r_por_corrida: float
+    r_por_km: float
+    percentual: float  # fatia do ganho total (0..1)
+
+
 # ----- Turno -----
 class TurnoIniciar(BaseModel):
     data: date | None = None

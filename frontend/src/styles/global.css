@@ -319,9 +319,9 @@ a {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-faint);
-  padding: 6px 10px;
+  padding: 6px 6px;
   transition: color 0.2s;
 }
 .tabbar a .ico { font-size: 21px; line-height: 1; }
@@ -458,6 +458,54 @@ a {
   margin: 6px auto 18px;
 }
 .sheet h2 { font-size: 20px; margin-bottom: 20px; }
+
+/* ---------- Vale a pena? ---------- */
+.vp-trigger {
+  width: 100%;
+  height: 46px;
+  margin-top: 14px;
+  border-radius: 13px;
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 14px;
+}
+.veredito {
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+}
+.veredito.otimo { background: rgba(46, 212, 122, 0.12); border-color: rgba(46, 212, 122, 0.4); }
+.veredito.ok { background: rgba(245, 166, 35, 0.12); border-color: rgba(245, 166, 35, 0.4); }
+.veredito.prejuizo { background: rgba(240, 82, 77, 0.12); border-color: rgba(240, 82, 77, 0.4); }
+.veredito .selo { font-size: 40px; }
+.veredito .tit {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 6px 0 2px;
+}
+.veredito.otimo .tit { color: var(--pos); }
+.veredito.ok .tit { color: var(--warn); }
+.veredito.prejuizo .tit { color: var(--neg); }
+.veredito .det { font-size: 14px; color: var(--text-dim); }
+.vp-linhas { display: grid; gap: 10px; margin-top: 4px; }
+.vp-linha { display: flex; justify-content: space-between; font-size: 14px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+.vp-linha:last-child { border-bottom: none; }
+.vp-linha span { color: var(--text-dim); }
+.vp-linha b { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+
+/* ---------- Comparador de plataformas ---------- */
+.comp-item { margin-bottom: 16px; }
+.comp-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.comp-top .nome { font-weight: 600; text-transform: capitalize; }
+.comp-top .tot { font-family: var(--font-display); font-weight: 600; font-variant-numeric: tabular-nums; }
+.comp-bar { height: 8px; background: var(--surface-3); border-radius: 999px; overflow: hidden; }
+.comp-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--pos)); border-radius: 999px; }
+.comp-meta { font-size: 12px; color: var(--text-dim); margin-top: 6px; display: flex; gap: 14px; }
 
 /* ---------- Turno (cronometro) ---------- */
 .turno {

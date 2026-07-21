@@ -1,4 +1,5 @@
 """Resumo financeiro consolidado para o dashboard."""
+from collections import defaultdict
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import get_current_user
 from ..models import Corrida, Gasto, Meta, Turno, User
-from ..schemas import DashboardResumo
+from ..schemas import DashboardResumo, PlataformaComparacao
 from ..utils import intervalo_periodo
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -93,3 +94,43 @@ def resumo(
         meta_valor=meta_valor,
         meta_progresso=meta_progresso,
     )
+
+
+@router.get("/plataformas", response_model=list[PlataformaComparacao])
+def comparar_plataformas(
+    periodo: str = Query("mensal", pattern="^(diaria|semanal|mensal)$"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    inicio, fim = intervalo_periodo(periodo)
+    corridas = db.scalars(
+        select(Corrida).where(
+            Corrida.usuario_id == user.id,
+            Corrida.data >= inicio,
+            Corrida.data <= fim,
+        )
+    ).all()
+
+    agrup: dict = defaultdict(lambda: {"total": 0.0, "num": 0, "km": 0.0})
+    for c in corridas:
+        g = agrup[c.plataforma]
+        g["total"] += c.valor
+        g["num"] += 1
+        g["km"] += c.km
+
+    total_geral = sum(g["total"] for g in agrup.values()) or 1.0
+
+    resultado = [
+        PlataformaComparacao(
+            plataforma=plat,
+            total=round(g["total"], 2),
+            num_corridas=g["num"],
+            km=round(g["km"], 2),
+            r_por_corrida=round(g["total"] / g["num"], 2) if g["num"] else 0.0,
+            r_por_km=round(g["total"] / g["km"], 2) if g["km"] else 0.0,
+            percentual=round(g["total"] / total_geral, 4),
+        )
+        for plat, g in agrup.items()
+    ]
+    resultado.sort(key=lambda x: x.total, reverse=True)
+    return resultado
