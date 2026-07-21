@@ -1,5 +1,5 @@
 """Schemas Pydantic (validacao de entrada/saida da API)."""
-from datetime import date, time
+from datetime import date, datetime, time
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -60,6 +60,31 @@ class JornadaOut(JornadaBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
     horas_trabalhadas: float | None = None
+
+
+# ----- Corrida -----
+class CorridaCreate(BaseModel):
+    valor: float = Field(gt=0)
+    plataforma: str = "uber"
+    km: float = 0.0
+    data: date
+
+
+class CorridaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    valor: float
+    plataforma: str
+    km: float
+    data: date
+    criado_em: datetime
+
+
+class CorridasHoje(BaseModel):
+    data: date
+    total: float
+    num_corridas: int
+    por_plataforma: dict[str, float]
 
 
 # ----- Gasto -----

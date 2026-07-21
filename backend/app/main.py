@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .database import Base, engine
-from .routers import auth, dashboard, gastos, jornadas, metas
+from .routers import auth, corridas, dashboard, gastos, jornadas, metas
 
 # MVP: cria as tabelas no start. (Depois migramos para Alembic.)
 Base.metadata.create_all(bind=engine)
@@ -24,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(corridas.router)
 app.include_router(jornadas.router)
 app.include_router(gastos.router)
 app.include_router(metas.router)

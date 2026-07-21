@@ -1,5 +1,5 @@
 """Resumo financeiro consolidado para o dashboard."""
-from datetime import date
+from collections import defaultdict
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user
-from ..models import Gasto, Jornada, Meta, User
+from ..models import Corrida, Gasto, Meta, User
 from ..schemas import DashboardResumo
-from ..utils import horas_trabalhadas, intervalo_periodo
+from ..utils import intervalo_periodo
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -22,19 +22,28 @@ def resumo(
 ):
     inicio, fim = intervalo_periodo(periodo)
 
-    jornadas = db.scalars(
-        select(Jornada).where(
-            Jornada.usuario_id == user.id,
-            Jornada.data >= inicio,
-            Jornada.data <= fim,
+    corridas = db.scalars(
+        select(Corrida).where(
+            Corrida.usuario_id == user.id,
+            Corrida.data >= inicio,
+            Corrida.data <= fim,
         )
     ).all()
 
-    ganho_bruto = sum(j.ganho_bruto for j in jornadas)
-    km = sum(j.km_rodado for j in jornadas)
-    corridas = sum(j.num_corridas for j in jornadas)
-    horas = sum(horas_trabalhadas(j.inicio, j.fim) for j in jornadas)
-    dias = len({j.data for j in jornadas})
+    ganho_bruto = sum(c.valor for c in corridas)
+    km = sum(c.km for c in corridas)
+    num_corridas = len(corridas)
+
+    # Horas trabalhadas derivadas: por dia, intervalo entre a 1a e a ultima corrida.
+    por_dia: dict = defaultdict(list)
+    for c in corridas:
+        if c.criado_em:
+            por_dia[c.data].append(c.criado_em)
+    horas = 0.0
+    for _dia, times in por_dia.items():
+        if len(times) >= 2:
+            horas += (max(times) - min(times)).total_seconds() / 3600
+    dias = len(por_dia)
 
     total_gastos = db.scalar(
         select(func.coalesce(func.sum(Gasto.valor), 0.0)).where(
@@ -67,11 +76,11 @@ def resumo(
         lucro_liquido=round(lucro, 2),
         horas_trabalhadas=round(horas, 2),
         km_rodado=round(km, 2),
-        num_corridas=corridas,
+        num_corridas=num_corridas,
         dias_trabalhados=dias,
         lucro_por_hora=round(lucro / horas, 2) if horas > 0 else 0.0,
         lucro_por_km=round(lucro / km, 2) if km > 0 else 0.0,
-        ganho_por_corrida=round(ganho_bruto / corridas, 2) if corridas > 0 else 0.0,
+        ganho_por_corrida=round(ganho_bruto / num_corridas, 2) if num_corridas > 0 else 0.0,
         meta_valor=meta_valor,
         meta_progresso=meta_progresso,
     )

@@ -46,6 +46,20 @@ class Jornada(Base):
     usuario: Mapped["User"] = relationship(back_populates="jornadas")
 
 
+class Corrida(Base):
+    """Uma corrida individual — registro rapido durante o turno."""
+    __tablename__ = "corridas"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    usuario_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), index=True)
+
+    valor: Mapped[float] = mapped_column(Float, nullable=False)
+    plataforma: Mapped[str] = mapped_column(String, default="uber")  # uber / 99 / indrive / outra
+    km: Mapped[float] = mapped_column(Float, default=0.0)
+    data: Mapped[date] = mapped_column(Date, nullable=False, index=True)  # data local do cliente
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Gasto(Base):
     __tablename__ = "gastos"
 

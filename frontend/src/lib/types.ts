@@ -23,6 +23,15 @@ export interface Jornada {
   horas_trabalhadas: number | null;
 }
 
+export interface Corrida {
+  id: string;
+  valor: number;
+  plataforma: string;
+  km: number;
+  data: string;
+  criado_em: string;
+}
+
 export interface Gasto {
   id: string;
   categoria: string;

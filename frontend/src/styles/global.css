@@ -459,6 +459,106 @@ a {
 }
 .sheet h2 { font-size: 20px; margin-bottom: 20px; }
 
+/* ---------- Quick add de corridas ---------- */
+.plat-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.plat {
+  height: 52px;
+  border-radius: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 14px;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s;
+}
+.plat.active {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--accent);
+}
+.plat.active .dot { background: var(--accent); }
+.plat .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  margin-bottom: 4px;
+}
+.plat-inner { display: flex; flex-direction: column; align-items: center; }
+
+.valor-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 6px 6px 6px 18px;
+  transition: border-color 0.2s;
+}
+.valor-box:focus-within { border-color: var(--accent); }
+.valor-box .cifrao {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.valor-box input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  width: 100%;
+  padding: 14px 0;
+}
+.valor-box input:focus { outline: none; }
+.valor-box input::placeholder { color: var(--text-faint); }
+.add-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 34px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: transform 0.12s;
+}
+.add-btn:active { transform: scale(0.9); }
+.add-btn:disabled { opacity: 0.4; }
+
+.km-opt {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.km-opt input {
+  width: 110px;
+  height: 42px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  padding: 0 12px;
+  font-size: 15px;
+}
+.km-opt input:focus { outline: none; border-color: var(--accent); }
+.km-opt span { font-size: 13px; color: var(--text-faint); }
+
 .loading {
   display: grid;
   place-items: center;

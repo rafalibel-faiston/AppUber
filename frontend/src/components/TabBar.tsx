@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const tabs = [
   { to: "/", ico: "◎", label: "Painel", end: true },
-  { to: "/jornadas", ico: "🏁", label: "Jornadas" },
+  { to: "/corridas", ico: "🚕", label: "Corridas" },
   { to: "/gastos", ico: "💸", label: "Gastos" },
   { to: "/metas", ico: "🎯", label: "Metas" },
 ];

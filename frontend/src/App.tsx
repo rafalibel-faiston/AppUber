@@ -4,7 +4,7 @@ import { useAuth } from "./lib/auth";
 import TabBar from "./components/TabBar";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import Jornadas from "./pages/Jornadas";
+import Corridas from "./pages/Corridas";
 import Gastos from "./pages/Gastos";
 import Metas from "./pages/Metas";
 
@@ -38,10 +38,10 @@ export default function App() {
             }
           />
           <Route
-            path="/jornadas"
+            path="/corridas"
             element={
               <Protected>
-                <Jornadas />
+                <Corridas />
               </Protected>
             }
           />
