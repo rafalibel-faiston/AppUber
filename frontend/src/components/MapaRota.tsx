@@ -30,7 +30,7 @@ export default function MapaRota({ pontos, height = 180, follow = true }: Props)
       maxZoom: 19,
     }).addTo(map);
 
-    linhaRef.current = L.polyline(pontos, { color: "#c6f135", weight: 5, opacity: 0.9 }).addTo(map);
+    linhaRef.current = L.polyline(pontos, { color: "#ffb020", weight: 5, opacity: 0.95 }).addTo(map);
     mapRef.current = map;
     // corrige tamanho quando o container acabou de aparecer
     setTimeout(() => map.invalidateSize(), 60);
@@ -56,9 +56,9 @@ export default function MapaRota({ pontos, height = 180, follow = true }: Props)
       if (!pontoRef.current) {
         pontoRef.current = L.circleMarker(atual, {
           radius: 7,
-          color: "#0b0e11",
+          color: "#0b0d14",
           weight: 2,
-          fillColor: "#2ed47a",
+          fillColor: "#ffbf47",
           fillOpacity: 1,
         }).addTo(map);
       } else {

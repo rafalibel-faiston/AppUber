@@ -1,29 +1,30 @@
 :root {
-  /* Paleta — painel escuro tipo cockpit/fintech */
-  --bg: #0b0e11;
-  --bg-grad: radial-gradient(1200px 600px at 50% -10%, #131a20 0%, #0b0e11 55%);
-  --surface: #14181d;
-  --surface-2: #1a2027;
-  --surface-3: #202832;
-  --border: #262e37;
-  --border-soft: #1e252d;
+  /* Paleta — cockpit à noite: índigo profundo + âmbar-ouro */
+  --bg: #0b0d14;
+  --bg-grad: radial-gradient(1200px 640px at 50% -14%, #191f31 0%, #0b0d14 60%);
+  --surface: #141824;
+  --surface-2: #1b2030;
+  --surface-3: #232a3d;
+  --border: #2b3346;
+  --border-soft: #1e2432;
 
-  --text: #eef2f5;
-  --text-dim: #8a94a0;
-  --text-faint: #5c6672;
+  --text: #eef1f7;
+  --text-dim: #98a1b6;
+  --text-faint: #626b82;
 
-  --accent: #c6f135;       /* lima elétrico — "go" / dinheiro */
-  --accent-ink: #0b0e11;   /* texto sobre o accent */
-  --pos: #2ed47a;          /* lucro / positivo */
-  --neg: #f0524d;          /* prejuízo / gasto */
-  --warn: #f5a623;         /* alertas */
-  --info: #4aa8ff;
+  --accent: #ffb020;       /* âmbar-ouro — dinheiro / faróis */
+  --accent-2: #ff7d54;     /* coral quente (gradientes) */
+  --accent-ink: #14120a;   /* texto sobre o âmbar */
+  --pos: #ffbf47;          /* lucro / positivo (ouro) */
+  --neg: #ff5d6c;          /* prejuízo / gasto (coral) */
+  --warn: #ffb020;         /* alertas */
+  --info: #6f8dff;         /* neutro / informativo */
 
   --radius: 18px;
   --radius-sm: 12px;
   --shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7);
 
-  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
 
   --safe-top: env(safe-area-inset-top, 0px);
@@ -136,12 +137,16 @@ a {
 }
 
 .hero {
-  background: linear-gradient(160deg, #1c2530 0%, #14181d 70%);
+  background: linear-gradient(158deg, #1e2437 0%, #141824 72%);
   border: 1px solid var(--border);
   border-radius: 22px;
   padding: 22px;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), var(--shadow);
+}
+.hero .big {
+  text-shadow: 0 0 26px rgba(255, 176, 32, 0.14);
 }
 .hero::after {
   content: "";
@@ -150,7 +155,7 @@ a {
   top: -40px;
   width: 160px;
   height: 160px;
-  background: radial-gradient(circle, rgba(198, 241, 53, 0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(255, 176, 32, 0.18), transparent 70%);
 }
 .hero .label {
   font-size: 13px;
@@ -211,7 +216,7 @@ a {
 .meta-bar > span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--pos));
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
   border-radius: 999px;
   transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -223,7 +228,20 @@ a {
   justify-content: space-between;
   margin: 26px 2px 12px;
 }
-.section-title h3 { font-size: 16px; font-weight: 600; }
+.section-title h3 {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.section-title h3::before {
+  content: "";
+  width: 4px;
+  height: 15px;
+  border-radius: 2px;
+  background: linear-gradient(var(--accent), var(--accent-2));
+}
 .section-title a { font-size: 13px; color: var(--accent); }
 
 /* ---------- List rows ---------- */
@@ -340,7 +358,7 @@ a {
   display: grid;
   place-items: center;
   font-size: 30px;
-  box-shadow: 0 8px 24px -6px rgba(198, 241, 53, 0.5);
+  box-shadow: 0 8px 24px -6px rgba(255, 176, 32, 0.5);
 }
 .fab:active { transform: translateX(-50%) scale(0.92); }
 
@@ -545,9 +563,9 @@ a {
   margin-bottom: 18px;
   border: 1px solid var(--border);
 }
-.veredito.otimo { background: rgba(46, 212, 122, 0.12); border-color: rgba(46, 212, 122, 0.4); }
-.veredito.ok { background: rgba(245, 166, 35, 0.12); border-color: rgba(245, 166, 35, 0.4); }
-.veredito.prejuizo { background: rgba(240, 82, 77, 0.12); border-color: rgba(240, 82, 77, 0.4); }
+.veredito.otimo { background: rgba(255, 176, 32, 0.12); border-color: rgba(255, 176, 32, 0.4); }
+.veredito.ok { background: rgba(111, 141, 255, 0.12); border-color: rgba(111, 141, 255, 0.4); }
+.veredito.prejuizo { background: rgba(255, 93, 108, 0.12); border-color: rgba(255, 93, 108, 0.4); }
 .veredito .selo { font-size: 40px; }
 .veredito .tit {
   font-family: var(--font-display);
@@ -555,8 +573,8 @@ a {
   font-weight: 700;
   margin: 6px 0 2px;
 }
-.veredito.otimo .tit { color: var(--pos); }
-.veredito.ok .tit { color: var(--warn); }
+.veredito.otimo .tit { color: var(--accent); }
+.veredito.ok .tit { color: var(--info); }
 .veredito.prejuizo .tit { color: var(--neg); }
 .veredito .det { font-size: 14px; color: var(--text-dim); }
 .vp-linhas { display: grid; gap: 10px; margin-top: 4px; }
@@ -587,22 +605,22 @@ a {
   transition: all 0.25s;
 }
 .turno.rodando {
-  background: linear-gradient(120deg, rgba(46, 212, 122, 0.14), var(--surface) 60%);
-  border-color: rgba(46, 212, 122, 0.4);
+  background: linear-gradient(120deg, rgba(255, 176, 32, 0.14), var(--surface) 60%);
+  border-color: rgba(255, 176, 32, 0.4);
 }
 .turno .live-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--pos);
+  background: var(--accent);
   flex-shrink: 0;
-  box-shadow: 0 0 0 0 rgba(46, 212, 122, 0.5);
+  box-shadow: 0 0 0 0 rgba(255, 176, 32, 0.5);
   animation: pulse 1.6s infinite;
 }
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(46, 212, 122, 0.5); }
-  70% { box-shadow: 0 0 0 12px rgba(46, 212, 122, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(46, 212, 122, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(255, 176, 32, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(255, 176, 32, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 176, 32, 0); }
 }
 .turno .info { flex: 1; }
 .turno .info .st { font-size: 12px; color: var(--text-dim); }
