@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Page from "../components/Page";
+import TurnoControl from "../components/TurnoControl";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { brl } from "../lib/format";
@@ -37,6 +38,8 @@ export default function Dashboard() {
         </div>
         <div className="avatar">{iniciais}</div>
       </div>
+
+      <TurnoControl />
 
       <div className="segment" style={{ marginBottom: 18 }}>
         {(Object.keys(labels) as Periodo[]).map((p) => (

@@ -3,20 +3,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import Page from "../components/Page";
 import Sheet from "../components/Sheet";
 import { api } from "../lib/api";
+import { useTurno } from "../lib/turno";
 import { brl, hojeISO } from "../lib/format";
-import type { Corrida, Turno, ValeAPena } from "../lib/types";
-
-function paraDate(iso: string): Date {
-  return new Date(iso.endsWith("Z") || iso.includes("+") ? iso : iso + "Z");
-}
-function formataDuracao(ms: number): string {
-  const s = Math.max(Math.floor(ms / 1000), 0);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const seg = s % 60;
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(h)}:${p(m)}:${p(seg)}`;
-}
+import type { Corrida, ValeAPena } from "../lib/types";
 
 const plataformas = [
   { id: "uber", label: "Uber" },
@@ -39,8 +28,7 @@ export default function Corridas() {
   const [valor, setValor] = useState("");
   const [km, setKm] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [turno, setTurno] = useState<Turno | null>(null);
-  const [agora, setAgora] = useState(Date.now());
+  const { rodando, decorridoMs } = useTurno();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // "Vale a pena?"
@@ -56,33 +44,11 @@ export default function Corridas() {
       .get<Corrida[]>(`/corridas?data=${hoje}`)
       .then(setLista)
       .finally(() => setCarregando(false));
-    api.get<Turno | null>("/turnos/atual").then(setTurno).catch(() => {});
   }, [hoje]);
 
-  // Tique do cronometro (so quando ha turno rodando)
-  useEffect(() => {
-    if (!turno) return;
-    const id = setInterval(() => setAgora(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [turno]);
-
   const total = lista.reduce((s, c) => s + c.valor, 0);
-  const rodando = !!turno;
-  const decorridoMs = turno ? agora - paraDate(turno.inicio).getTime() : 0;
   const horasDecorridas = decorridoMs / 3_600_000;
   const porHoraVivo = horasDecorridas > 0.05 ? total / horasDecorridas : 0;
-
-  async function alternarTurno() {
-    if (rodando) {
-      if (!confirm("Encerrar o turno agora?")) return;
-      await api.post<Turno>("/turnos/encerrar", {});
-      setTurno(null);
-    } else {
-      const t = await api.post<Turno>("/turnos/iniciar", { data: hoje });
-      setTurno(t);
-      setAgora(Date.now());
-    }
-  }
 
   async function adicionar() {
     const v = parseFloat(valor.replace(",", "."));
@@ -149,24 +115,6 @@ export default function Corridas() {
             Corridas
           </div>
         </div>
-      </div>
-
-      {/* Cronometro de turno */}
-      <div className={`turno ${rodando ? "rodando" : ""}`}>
-        {rodando ? <span className="live-dot" /> : <span style={{ fontSize: 20 }}>⏱️</span>}
-        <div className="info">
-          <div className="st">{rodando ? "Rodando agora" : "Fora de turno"}</div>
-          {rodando ? (
-            <div className="clock">{formataDuracao(decorridoMs)}</div>
-          ) : (
-            <div className="clock" style={{ color: "var(--text-faint)", fontSize: 18 }}>
-              00:00:00
-            </div>
-          )}
-        </div>
-        <button className={`go ${rodando ? "stop" : "start"}`} onClick={alternarTurno}>
-          {rodando ? "Encerrar" : "▶ Começar"}
-        </button>
       </div>
 
       {/* Saldo do dia */}
