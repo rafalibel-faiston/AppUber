@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Page from "../components/Page";
-import Sheet from "../components/Sheet";
 import { api } from "../lib/api";
 import { brl, dataCurta, hojeISO } from "../lib/format";
 import type { Gasto } from "../lib/types";
 
 const categorias = [
   { id: "combustivel", label: "Combustível", ico: "⛽" },
-  { id: "alimentacao", label: "Alimentação", ico: "🍔" },
+  { id: "alimentacao", label: "Comida", ico: "🍔" },
   { id: "pedagio", label: "Pedágio", ico: "🛣️" },
   { id: "lavagem", label: "Lavagem", ico: "🧼" },
   { id: "manutencao", label: "Manutenção", ico: "🔧" },
-  { id: "aluguel", label: "Aluguel carro", ico: "🔑" },
+  { id: "aluguel", label: "Aluguel", ico: "🔑" },
   { id: "outro", label: "Outro", ico: "📦" },
 ];
 const icoDe = (id: string) => categorias.find((c) => c.id === id)?.ico ?? "📦";
@@ -20,9 +20,11 @@ const labelDe = (id: string) => categorias.find((c) => c.id === id)?.label ?? id
 export default function Gastos() {
   const [lista, setLista] = useState<Gasto[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [aberto, setAberto] = useState(false);
+  const [categoria, setCategoria] = useState("combustivel");
+  const [valor, setValor] = useState("");
+  const [descricao, setDescricao] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [form, setForm] = useState({ categoria: "combustivel", valor: "", data: hojeISO(), descricao: "" });
+  const inputRef = useRef<HTMLInputElement>(null);
 
   function carregar() {
     api
@@ -32,50 +34,102 @@ export default function Gastos() {
   }
   useEffect(carregar, []);
 
-  async function salvar(e: React.FormEvent) {
-    e.preventDefault();
+  const total = lista.reduce((s, g) => s + g.valor, 0);
+
+  async function adicionar() {
+    const v = parseFloat(valor.replace(",", "."));
+    if (!v || v <= 0 || salvando) return;
     setSalvando(true);
     try {
-      await api.post("/gastos", {
-        categoria: form.categoria,
-        valor: parseFloat(form.valor) || 0,
-        data: form.data,
-        descricao: form.descricao || null,
+      const novo = await api.post<Gasto>("/gastos", {
+        categoria,
+        valor: v,
+        data: hojeISO(),
+        descricao: descricao || null,
       });
-      setAberto(false);
-      setForm({ ...form, valor: "", descricao: "" });
-      setCarregando(true);
-      carregar();
+      setLista((l) => [novo, ...l]);
+      setValor("");
+      setDescricao("");
+      inputRef.current?.focus();
     } finally {
       setSalvando(false);
     }
   }
 
   async function remover(id: string) {
-    if (!confirm("Excluir este gasto?")) return;
     await api.del(`/gastos/${id}`);
     setLista((l) => l.filter((g) => g.id !== id));
   }
 
-  const total = lista.reduce((s, g) => s + g.valor, 0);
-
   return (
     <Page>
       <div className="topbar">
-        <div className="name" style={{ fontSize: 24 }}>
-          Gastos
+        <div>
+          <div className="hello">Controle</div>
+          <div className="name" style={{ fontSize: 22 }}>
+            Gastos
+          </div>
         </div>
-        <button className="btn ghost" style={{ height: 40, padding: "0 16px" }} onClick={() => setAberto(true)}>
-          + Novo
-        </button>
       </div>
 
-      {lista.length > 0 && (
-        <div className="hero" style={{ marginBottom: 18 }}>
-          <div className="label">Total registrado</div>
-          <div className="big neg">{brl(total)}</div>
+      <div className="hero" style={{ marginBottom: 20 }}>
+        <div className="label">Total em gastos</div>
+        <motion.div
+          key={total}
+          className="big neg"
+          initial={{ scale: 1.06, opacity: 0.6 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+        >
+          {brl(total)}
+        </motion.div>
+        <div className="sub">
+          {lista.length} {lista.length === 1 ? "lançamento" : "lançamentos"}
         </div>
-      )}
+      </div>
+
+      {/* Categoria */}
+      <div className="chips" style={{ marginBottom: 14 }}>
+        {categorias.map((c) => (
+          <div
+            key={c.id}
+            className={`chip ${categoria === c.id ? "active" : ""}`}
+            onClick={() => setCategoria(c.id)}
+          >
+            {c.ico} {c.label}
+          </div>
+        ))}
+      </div>
+
+      {/* Valor + adicionar */}
+      <div className="valor-box">
+        <span className="cifrao">R$</span>
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="decimal"
+          value={valor}
+          onChange={(e) => setValor(e.target.value.replace(/[^0-9.,]/g, ""))}
+          onKeyDown={(e) => e.key === "Enter" && adicionar()}
+          placeholder="0,00"
+        />
+        <button className="add-btn" onClick={adicionar} disabled={salvando || !valor}>
+          +
+        </button>
+      </div>
+      <div className="km-opt">
+        <input
+          type="text"
+          value={descricao}
+          onChange={(e) => setDescricao(e.target.value)}
+          placeholder="anotação"
+          style={{ width: "100%" }}
+        />
+      </div>
+
+      <div className="section-title">
+        <h3>Lançamentos</h3>
+      </div>
 
       {carregando ? (
         <div className="loading">
@@ -84,72 +138,34 @@ export default function Gastos() {
       ) : lista.length === 0 ? (
         <div className="empty">
           <div className="emoji">💸</div>
-          <p>Nenhum gasto lançado.</p>
-          <p style={{ marginTop: 6 }}>Combustível, comida, pedágio... registre pra saber seu lucro real.</p>
+          <p>Nenhum gasto ainda.</p>
+          <p style={{ marginTop: 6 }}>Escolha a categoria, digite o valor e toque em +.</p>
         </div>
       ) : (
-        lista.map((g) => (
-          <div className="row" key={g.id} onClick={() => remover(g.id)}>
-            <div className="ic">{icoDe(g.categoria)}</div>
-            <div className="body">
-              <div className="t">{labelDe(g.categoria)}</div>
-              <div className="s">
-                {dataCurta(g.data)}
-                {g.descricao ? ` · ${g.descricao}` : ""}
-              </div>
-            </div>
-            <div className="val neg">-{brl(g.valor)}</div>
-          </div>
-        ))
-      )}
-
-      <Sheet open={aberto} title="Novo gasto" onClose={() => setAberto(false)}>
-        <form onSubmit={salvar}>
-          <div className="field">
-            <label>Categoria</label>
-            <div className="chips">
-              {categorias.map((c) => (
-                <div
-                  key={c.id}
-                  className={`chip ${form.categoria === c.id ? "active" : ""}`}
-                  onClick={() => setForm({ ...form, categoria: c.id })}
-                >
-                  {c.ico} {c.label}
+        <AnimatePresence initial={false}>
+          {lista.map((g) => (
+            <motion.div
+              key={g.id}
+              className="row"
+              layout
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              onClick={() => remover(g.id)}
+            >
+              <div className="ic">{icoDe(g.categoria)}</div>
+              <div className="body">
+                <div className="t">{labelDe(g.categoria)}</div>
+                <div className="s">
+                  {dataCurta(g.data)}
+                  {g.descricao ? ` · ${g.descricao}` : ""}
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="field-row">
-            <div className="field">
-              <label>Valor (R$)</label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={form.valor}
-                onChange={(e) => setForm({ ...form, valor: e.target.value })}
-                placeholder="0,00"
-                required
-              />
-            </div>
-            <div className="field">
-              <label>Data</label>
-              <input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} required />
-            </div>
-          </div>
-          <div className="field">
-            <label>Descrição (opcional)</label>
-            <input
-              value={form.descricao}
-              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-              placeholder="Ex: posto Shell, gasolina"
-            />
-          </div>
-          <button className="btn primary" disabled={salvando} style={{ marginTop: 8 }}>
-            {salvando ? "Salvando..." : "Salvar gasto"}
-          </button>
-        </form>
-      </Sheet>
+              </div>
+              <div className="val neg">-{brl(g.valor)}</div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      )}
     </Page>
   );
 }
