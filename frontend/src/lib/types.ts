@@ -32,11 +32,15 @@ export interface Corrida {
   criado_em: string;
 }
 
+export type Ponto = [number, number]; // [lat, lng]
+
 export interface Turno {
   id: string;
   inicio: string;
   fim: string | null;
   data: string;
+  km: number;
+  pontos: Ponto[] | null;
 }
 
 export interface Gasto {

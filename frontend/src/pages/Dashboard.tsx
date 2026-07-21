@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Page from "../components/Page";
 import TurnoControl from "../components/TurnoControl";
+import MapaRota from "../components/MapaRota";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { useTurno } from "../lib/turno";
 import { brl } from "../lib/format";
 import type { DashboardResumo } from "../lib/types";
 
@@ -12,10 +14,12 @@ const labels: Record<Periodo, string> = { diaria: "Hoje", semanal: "Semana", men
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { rodando, pontos, kmGps, gpsErro } = useTurno();
   const navigate = useNavigate();
   const [periodo, setPeriodo] = useState<Periodo>("semanal");
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [mapaFull, setMapaFull] = useState(false);
 
   useEffect(() => {
     setCarregando(true);
@@ -40,6 +44,25 @@ export default function Dashboard() {
       </div>
 
       <TurnoControl />
+
+      {(rodando || pontos.length > 0) && (
+        <div className="mapa-card">
+          <div className="mapa-badge">
+            {rodando && <span className="live-dot" />}
+            <span className="km">{kmGps.toLocaleString("pt-BR")} km</span>
+          </div>
+          <button className="mapa-expand" onClick={() => setMapaFull(true)}>
+            Ampliar ⤢
+          </button>
+          <MapaRota pontos={pontos} height={180} follow={rodando} />
+        </div>
+      )}
+
+      {rodando && gpsErro && (
+        <div className="error-msg" style={{ marginBottom: 18 }}>
+          GPS: {gpsErro}. Ative a localização e mantenha o app aberto para traçar a rota.
+        </div>
+      )}
 
       <div className="segment" style={{ marginBottom: 18 }}>
         {(Object.keys(labels) as Periodo[]).map((p) => (
@@ -119,6 +142,23 @@ export default function Dashboard() {
             </div>
           </div>
         </>
+      )}
+
+      {mapaFull && (
+        <div className="mapa-full">
+          <div className="barra">
+            <div>
+              <div className="hello">Rota do turno</div>
+              <div className="km-big">{kmGps.toLocaleString("pt-BR")} km</div>
+            </div>
+            <button className="fechar" onClick={() => setMapaFull(false)}>
+              ✕
+            </button>
+          </div>
+          <div style={{ flex: 1 }}>
+            <MapaRota pontos={pontos} height="100%" follow={rodando} />
+          </div>
+        </div>
       )}
     </Page>
   );

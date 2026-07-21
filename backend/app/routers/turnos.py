@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import get_current_user
 from ..models import Turno, User
-from ..schemas import TurnoIniciar, TurnoOut
+from ..schemas import TurnoIniciar, TurnoOut, TurnoUpdate
 
 router = APIRouter(prefix="/api/turnos", tags=["turnos"])
 
@@ -37,11 +37,40 @@ def iniciar(dados: TurnoIniciar, db: Session = Depends(get_db), user: User = Dep
     return t
 
 
+@router.patch("/{turno_id}", response_model=TurnoOut)
+def atualizar(
+    turno_id: str,
+    dados: TurnoUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Autosave da rota/km durante o turno (chamado periodicamente)."""
+    t = db.get(Turno, turno_id)
+    if not t or t.usuario_id != user.id:
+        raise HTTPException(status_code=404, detail="Turno nao encontrado")
+    if dados.km is not None:
+        t.km = dados.km
+    if dados.pontos is not None:
+        t.pontos = dados.pontos
+    db.commit()
+    db.refresh(t)
+    return t
+
+
 @router.post("/encerrar", response_model=TurnoOut)
-def encerrar(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def encerrar(
+    dados: TurnoUpdate | None = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     t = _aberto(db, user.id)
     if not t:
         raise HTTPException(status_code=404, detail="Nenhum turno em andamento")
+    if dados:
+        if dados.km is not None:
+            t.km = dados.km
+        if dados.pontos is not None:
+            t.pontos = dados.pontos
     t.fim = datetime.utcnow()
     db.commit()
     db.refresh(t)

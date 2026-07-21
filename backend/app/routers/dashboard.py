@@ -32,7 +32,7 @@ def resumo(
     ).all()
 
     ganho_bruto = sum(c.valor for c in corridas)
-    km = sum(c.km for c in corridas)
+    km_manual = sum(c.km for c in corridas)
     num_corridas = len(corridas)
 
     # Horas trabalhadas: soma real dos turnos cronometrados no periodo.
@@ -45,9 +45,14 @@ def resumo(
     ).all()
     agora = datetime.utcnow()
     horas = 0.0
+    km_gps = 0.0
     for t in turnos:
         fim_t = t.fim or agora  # turno aberto conta ate agora
         horas += max((fim_t - t.inicio).total_seconds(), 0) / 3600
+        km_gps += t.km or 0.0
+
+    # Prefere a distancia real do GPS; cai no km manual das corridas se nao houver.
+    km = km_gps if km_gps > 0 else km_manual
 
     # Dias trabalhados = dias distintos com corridas OU turnos.
     dias = len({c.data for c in corridas} | {t.data for t in turnos})

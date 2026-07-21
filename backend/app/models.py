@@ -2,7 +2,7 @@
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Time, func
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -84,6 +84,8 @@ class Turno(Base):
     inicio: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     fim: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     data: Mapped[date] = mapped_column(Date, nullable=False, index=True)  # data local do cliente
+    km: Mapped[float] = mapped_column(Float, default=0.0)  # distancia pelo GPS
+    pontos: Mapped[list | None] = mapped_column(JSON, nullable=True)  # tracado [[lat,lng],...]
 
 
 class Gasto(Base):

@@ -459,6 +459,73 @@ a {
 }
 .sheet h2 { font-size: 20px; margin-bottom: 20px; }
 
+/* ---------- Mapa da rota ---------- */
+.mapa-card {
+  position: relative;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+.mapa-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(11, 14, 17, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.mapa-badge .km { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.mapa-expand {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 500;
+  background: rgba(11, 14, 17, 0.82);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.mapa-full {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.mapa-full .barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--safe-top) + 14px) 18px 12px;
+}
+.mapa-full .barra .km-big {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+.mapa-full .fechar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 20px;
+}
+
 /* ---------- Vale a pena? ---------- */
 .vp-trigger {
   width: 100%;

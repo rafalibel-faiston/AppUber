@@ -138,12 +138,19 @@ class TurnoIniciar(BaseModel):
     data: date | None = None
 
 
+class TurnoUpdate(BaseModel):
+    km: float | None = Field(default=None, ge=0)
+    pontos: list | None = None
+
+
 class TurnoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str
     inicio: datetime
     fim: datetime | None
     data: date
+    km: float = 0.0
+    pontos: list | None = None
 
 
 # ----- Gasto -----

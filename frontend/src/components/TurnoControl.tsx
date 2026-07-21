@@ -11,7 +11,7 @@ function formataDuracao(ms: number): string {
 }
 
 export default function TurnoControl() {
-  const { rodando, decorridoMs, iniciar, encerrar } = useTurno();
+  const { rodando, decorridoMs, kmGps, iniciar, encerrar } = useTurno();
 
   async function alternar() {
     if (rodando) {
@@ -26,7 +26,9 @@ export default function TurnoControl() {
     <div className={`turno ${rodando ? "rodando" : ""}`}>
       {rodando ? <span className="live-dot" /> : <span style={{ fontSize: 20 }}>⏱️</span>}
       <div className="info">
-        <div className="st">{rodando ? "Rodando agora" : "Fora de turno"}</div>
+        <div className="st">
+          {rodando ? `Rodando agora${kmGps > 0 ? ` · ${kmGps.toLocaleString("pt-BR")} km` : ""}` : "Fora de turno"}
+        </div>
         <div className="clock" style={rodando ? undefined : { color: "var(--text-faint)", fontSize: 18 }}>
           {rodando ? formataDuracao(decorridoMs) : "00:00:00"}
         </div>
