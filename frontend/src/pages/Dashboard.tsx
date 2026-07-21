@@ -19,15 +19,19 @@ export default function Dashboard() {
   const [periodo, setPeriodo] = useState<Periodo>("semanal");
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
+  const [recarga, setRecarga] = useState(0);
   const [mapaFull, setMapaFull] = useState(false);
 
   useEffect(() => {
     setCarregando(true);
+    setErro(false);
     api
       .get<DashboardResumo>(`/dashboard/resumo?periodo=${periodo}`)
-      .then(setResumo)
+      .then((r) => setResumo(r))
+      .catch(() => setErro(true))
       .finally(() => setCarregando(false));
-  }, [periodo]);
+  }, [periodo, recarga]);
 
   const iniciais = user?.nome.slice(0, 2).toUpperCase() ?? "??";
   const lucro = resumo?.lucro_liquido ?? 0;
@@ -72,7 +76,15 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {carregando || !resumo ? (
+      {erro ? (
+        <div className="empty">
+          <div className="emoji">📡</div>
+          <p>Não foi possível carregar seus números.</p>
+          <button className="btn ghost" style={{ marginTop: 14 }} onClick={() => setRecarga((n) => n + 1)}>
+            Tentar de novo
+          </button>
+        </div>
+      ) : carregando || !resumo ? (
         <div className="loading">
           <div className="spinner" />
         </div>

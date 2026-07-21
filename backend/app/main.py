@@ -7,11 +7,12 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import settings
-from .database import Base, engine
+from .database import Base, engine, ensure_columns
 from .routers import auth, config, corridas, dashboard, gastos, jornadas, metas, turnos
 
-# MVP: cria as tabelas no start. (Depois migramos para Alembic.)
+# MVP: cria as tabelas no start e adiciona colunas novas em tabelas existentes.
 Base.metadata.create_all(bind=engine)
+ensure_columns()
 
 app = FastAPI(title="Volante API", version="0.1.0")
 

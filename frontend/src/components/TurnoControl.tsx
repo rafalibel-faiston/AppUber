@@ -14,11 +14,15 @@ export default function TurnoControl() {
   const { rodando, decorridoMs, kmGps, iniciar, encerrar } = useTurno();
 
   async function alternar() {
-    if (rodando) {
-      if (!confirm("Encerrar o turno agora?")) return;
-      await encerrar();
-    } else {
-      await iniciar(hojeISO());
+    try {
+      if (rodando) {
+        if (!confirm("Encerrar o turno agora?")) return;
+        await encerrar();
+      } else {
+        await iniciar(hojeISO());
+      }
+    } catch {
+      alert("Não foi possível atualizar o turno. Tente novamente em instantes.");
     }
   }
 

@@ -1,7 +1,7 @@
 """Conexao com o banco e sessao do SQLAlchemy."""
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import settings
@@ -24,3 +24,25 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def ensure_columns() -> None:
+    """Migração leve: adiciona ao banco colunas novas dos modelos que ainda
+    não existem nas tabelas já criadas (o create_all não altera tabelas)."""
+    insp = inspect(engine)
+    for table_name, table in Base.metadata.tables.items():
+        if not insp.has_table(table_name):
+            continue
+        existentes = {c["name"] for c in insp.get_columns(table_name)}
+        for col in table.columns:
+            if col.name in existentes:
+                continue
+            tipo = col.type.compile(dialect=engine.dialect)
+            ddl = f'ALTER TABLE {table_name} ADD COLUMN "{col.name}" {tipo}'
+            default = col.default
+            if default is not None and getattr(default, "is_scalar", False):
+                val = default.arg
+                val = f"'{val}'" if isinstance(val, str) else val
+                ddl += f" DEFAULT {val}"
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
