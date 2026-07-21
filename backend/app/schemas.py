@@ -87,6 +87,19 @@ class CorridasHoje(BaseModel):
     por_plataforma: dict[str, float]
 
 
+# ----- Turno -----
+class TurnoIniciar(BaseModel):
+    data: date | None = None
+
+
+class TurnoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    inicio: datetime
+    fim: datetime | None
+    data: date
+
+
 # ----- Gasto -----
 class GastoBase(BaseModel):
     categoria: str

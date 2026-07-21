@@ -60,6 +60,18 @@ class Corrida(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class Turno(Base):
+    """Turno de trabalho — cronometro. Fonte real das horas trabalhadas."""
+    __tablename__ = "turnos"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    usuario_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), index=True)
+
+    inicio: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    fim: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    data: Mapped[date] = mapped_column(Date, nullable=False, index=True)  # data local do cliente
+
+
 class Gasto(Base):
     __tablename__ = "gastos"
 

@@ -32,6 +32,13 @@ export interface Corrida {
   criado_em: string;
 }
 
+export interface Turno {
+  id: string;
+  inicio: string;
+  fim: string | null;
+  data: string;
+}
+
 export interface Gasto {
   id: string;
   categoria: string;

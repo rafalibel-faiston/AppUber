@@ -83,11 +83,11 @@ export default function Dashboard() {
           <div className="stat-grid">
             <div className="stat">
               <div className="k">⏱️ Por hora</div>
-              <div className="v">{brl(resumo.lucro_por_hora)}</div>
+              <div className="v">{resumo.horas_trabalhadas > 0 ? brl(resumo.lucro_por_hora) : "—"}</div>
             </div>
             <div className="stat">
               <div className="k">🛣️ Por km</div>
-              <div className="v">{brl(resumo.lucro_por_km)}</div>
+              <div className="v">{resumo.km_rodado > 0 ? brl(resumo.lucro_por_km) : "—"}</div>
             </div>
             <div className="stat">
               <div className="k">🚗 Corridas</div>
