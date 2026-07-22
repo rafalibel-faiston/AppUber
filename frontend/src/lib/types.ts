@@ -58,6 +58,23 @@ export interface Meta {
   ativo: boolean;
 }
 
+export interface AgendaDia {
+  id: string;
+  data: string; // YYYY-MM-DD
+  trabalhar: boolean;
+  horas_alvo: number;
+  nota: string | null;
+}
+
+export interface AgendaResumo {
+  inicio: string;
+  fim: string;
+  dias_planejados: number;
+  dias_folga: number;
+  horas_planejadas: number;
+  media_horas: number;
+}
+
 export interface Config {
   preco_combustivel: number;
   consumo_km_l: number;

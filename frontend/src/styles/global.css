@@ -744,6 +744,235 @@ a {
 .km-opt input:focus { outline: none; border-color: var(--accent); }
 .km-opt span { font-size: 13px; color: var(--text-faint); }
 
+/* ---------- Botao de icone (menu, voltar) ---------- */
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s, background 0.2s;
+}
+.icon-btn:active { transform: scale(0.92); }
+
+/* ---------- Atalho da Agenda (Painel) ---------- */
+.agenda-shortcut {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  text-align: left;
+  background: linear-gradient(120deg, rgba(111, 141, 255, 0.14), var(--surface) 62%);
+  border: 1px solid var(--border);
+  transition: transform 0.12s;
+}
+.agenda-shortcut:active { transform: scale(0.985); }
+.agenda-shortcut .ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.agenda-shortcut .txt { flex: 1; min-width: 0; }
+.agenda-shortcut .txt .t { font-weight: 600; font-size: 15px; }
+.agenda-shortcut .txt .s { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; }
+.agenda-shortcut .chev { font-size: 26px; color: var(--text-faint); line-height: 1; }
+
+/* ---------- Menu (sheet) ---------- */
+.menu-list { display: grid; gap: 10px; }
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  text-align: left;
+  transition: transform 0.12s;
+}
+.menu-item:active { transform: scale(0.98); }
+.menu-item .mi-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.menu-item .mi-txt { flex: 1; display: flex; flex-direction: column; }
+.menu-item .mi-txt b { font-size: 15px; font-weight: 600; }
+.menu-item .mi-txt small { font-size: 12px; color: var(--text-dim); margin-top: 1px; }
+.menu-item .chev { font-size: 24px; color: var(--text-faint); }
+
+/* ---------- Calendario / Agenda ---------- */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.cal-nav button {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s;
+}
+.cal-nav button:active { transform: scale(0.9); }
+.cal-mes {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.cal-card {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  transition: opacity 0.2s;
+}
+.cal-card.loading-op { opacity: 0.5; }
+.cal-head {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 8px;
+}
+.cal-head span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+.cal-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  position: relative;
+  color: var(--text);
+}
+.cal-cell.empty { background: transparent; pointer-events: none; }
+.cal-cell .d { font-family: var(--font-display); font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cal-cell .h { font-size: 9.5px; font-weight: 700; line-height: 1; }
+.cal-cell .h.folga-ic { font-size: 11px; }
+.cal-cell.trab {
+  background: linear-gradient(150deg, rgba(255, 176, 32, 0.28), rgba(255, 176, 32, 0.1));
+  border-color: rgba(255, 176, 32, 0.55);
+}
+.cal-cell.trab .h { color: var(--accent); }
+.cal-cell.folga {
+  background: var(--surface);
+  border-color: var(--border);
+}
+.cal-cell.folga .d { color: var(--text-dim); }
+.cal-cell.hoje { border-color: var(--info); box-shadow: 0 0 0 1px var(--info) inset; }
+.cal-cell.hoje.trab { box-shadow: 0 0 0 1px var(--accent) inset; }
+
+.cal-legenda {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.cal-legenda span { display: flex; align-items: center; gap: 6px; }
+.cal-legenda .dot { width: 11px; height: 11px; border-radius: 4px; display: inline-block; }
+.cal-legenda .dot.trab { background: var(--accent); }
+.cal-legenda .dot.folga { background: var(--surface-3); border: 1px solid var(--border); }
+.cal-legenda .dot.hoje { background: transparent; border: 1.5px solid var(--info); }
+
+/* ---------- Sheet de edicao do dia ---------- */
+.modo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+.modo {
+  height: 54px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.15s;
+}
+.modo.active {
+  background: rgba(255, 176, 32, 0.14);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.modo.active.folga {
+  background: rgba(111, 141, 255, 0.14);
+  border-color: var(--info);
+}
+.horas-label {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 18px 0 12px;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.stepper button {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 30px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  transition: transform 0.12s;
+}
+.stepper button:active { transform: scale(0.9); }
+.stepper .valor { display: flex; flex-direction: column; align-items: center; min-width: 96px; }
+.stepper .valor b {
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.stepper .valor small { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
 .loading {
   display: grid;
   place-items: center;

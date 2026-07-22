@@ -4,8 +4,6 @@ const tabs = [
   { to: "/", ico: "◎", label: "Painel", end: true },
   { to: "/corridas", ico: "🚕", label: "Corridas" },
   { to: "/gastos", ico: "💸", label: "Gastos" },
-  { to: "/metas", ico: "🎯", label: "Metas" },
-  { to: "/ajustes", ico: "⚙️", label: "Ajustes" },
 ];
 
 export default function TabBar() {

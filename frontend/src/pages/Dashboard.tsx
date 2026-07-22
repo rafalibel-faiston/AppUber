@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Page from "../components/Page";
+import Sheet from "../components/Sheet";
 import TurnoControl from "../components/TurnoControl";
 import MapaRota from "../components/MapaRota";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useTurno } from "../lib/turno";
-import { brl } from "../lib/format";
-import type { DashboardResumo } from "../lib/types";
+import { brl, hojeISO } from "../lib/format";
+import type { AgendaDia, DashboardResumo } from "../lib/types";
 
 type Periodo = "diaria" | "semanal" | "mensal";
 const labels: Record<Periodo, string> = { diaria: "Hoje", semanal: "Semana", mensal: "Mês" };
@@ -22,6 +23,8 @@ export default function Dashboard() {
   const [erro, setErro] = useState(false);
   const [recarga, setRecarga] = useState(0);
   const [mapaFull, setMapaFull] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [planoHoje, setPlanoHoje] = useState<AgendaDia | null>(null);
 
   useEffect(() => {
     setCarregando(true);
@@ -32,6 +35,19 @@ export default function Dashboard() {
       .catch(() => setErro(true))
       .finally(() => setCarregando(false));
   }, [periodo, recarga]);
+
+  useEffect(() => {
+    const hoje = hojeISO();
+    api
+      .get<AgendaDia[]>(`/agenda?inicio=${hoje}&fim=${hoje}`)
+      .then((l) => setPlanoHoje(l[0] ?? null))
+      .catch(() => setPlanoHoje(null));
+  }, []);
+
+  function irPara(rota: string) {
+    setMenu(false);
+    navigate(rota);
+  }
 
   const iniciais = user?.nome.slice(0, 2).toUpperCase() ?? "??";
   const lucro = resumo?.lucro_liquido ?? 0;
@@ -44,10 +60,31 @@ export default function Dashboard() {
           <div className="hello">Boa jornada,</div>
           <div className="name">{user?.nome.split(" ")[0]}</div>
         </div>
-        <div className="avatar">{iniciais}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button className="icon-btn" onClick={() => setMenu(true)} aria-label="Menu">
+            ☰
+          </button>
+          <div className="avatar">{iniciais}</div>
+        </div>
       </div>
 
       <TurnoControl />
+
+      {/* Atalho da Agenda */}
+      <button className="agenda-shortcut" onClick={() => navigate("/agenda")}>
+        <div className="ico">📅</div>
+        <div className="txt">
+          <div className="t">Agenda</div>
+          <div className="s">
+            {planoHoje?.trabalhar
+              ? `Hoje: meta de ${planoHoje.horas_alvo}h de trabalho`
+              : planoHoje && !planoHoje.trabalhar
+              ? "Hoje é dia de folga 😴"
+              : "Planeje seus dias e horas de trabalho"}
+          </div>
+        </div>
+        <div className="chev">›</div>
+      </button>
 
       {(rodando || pontos.length > 0) && (
         <div className="mapa-card">
@@ -172,6 +209,35 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <Sheet open={menu} title="Menu" onClose={() => setMenu(false)}>
+        <div className="menu-list">
+          <button className="menu-item" onClick={() => irPara("/agenda")}>
+            <span className="mi-ico">📅</span>
+            <span className="mi-txt">
+              <b>Agenda</b>
+              <small>Planeje dias e horas de trabalho</small>
+            </span>
+            <span className="chev">›</span>
+          </button>
+          <button className="menu-item" onClick={() => irPara("/metas")}>
+            <span className="mi-ico">🎯</span>
+            <span className="mi-txt">
+              <b>Metas</b>
+              <small>Objetivos de lucro por período</small>
+            </span>
+            <span className="chev">›</span>
+          </button>
+          <button className="menu-item" onClick={() => irPara("/ajustes")}>
+            <span className="mi-ico">⚙️</span>
+            <span className="mi-txt">
+              <b>Ajustes</b>
+              <small>Custo do carro, plataformas e conta</small>
+            </span>
+            <span className="chev">›</span>
+          </button>
+        </div>
+      </Sheet>
     </Page>
   );
 }

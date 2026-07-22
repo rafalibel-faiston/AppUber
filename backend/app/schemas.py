@@ -199,6 +199,32 @@ class MetaOut(MetaBase):
     id: str
 
 
+# ----- Agenda (calendario de planejamento) -----
+class AgendaUpsert(BaseModel):
+    data: date
+    trabalhar: bool = True
+    horas_alvo: float = Field(default=0.0, ge=0, le=24)
+    nota: str | None = None
+
+
+class AgendaOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    data: date
+    trabalhar: bool
+    horas_alvo: float
+    nota: str | None = None
+
+
+class AgendaResumo(BaseModel):
+    inicio: date
+    fim: date
+    dias_planejados: int      # dias marcados para trabalhar
+    dias_folga: int           # dias marcados como folga
+    horas_planejadas: float   # soma das horas_alvo dos dias de trabalho
+    media_horas: float        # horas_planejadas / dias_planejados
+
+
 # ----- Dashboard -----
 class DashboardResumo(BaseModel):
     periodo: str

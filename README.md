@@ -123,13 +123,18 @@ Quer testar no celular direto do seu PC, sem subir ainda?
 
 ## 🗺️ Roadmap (próximas fases)
 
-Já entregue (MVP): **Auth · Dashboard · Jornadas · Gastos · Metas**.
+Já entregue: **Auth · Dashboard · Corridas · Gastos · Metas · Agenda (calendário)**.
+
+> **Navegação (3 abas):** a barra inferior tem só **Painel · Corridas · Gastos** —
+> as funções principais a 1 toque. **Agenda** fica num atalho no Painel, e
+> **Metas / Ajustes** no menu ☰ do topo.
 
 Próximos módulos planejados:
 - 🔧 **Manutenção** com alertas por km/data (óleo, pneu, revisão)
 - 💳 **Cartões e faturas** (vencimentos, fluxo de caixa)
 - 🚙 **Veículo** (consumo médio, custo por km real)
-- 📅 **Calendário** de jornadas e folgas
+- 🤖 **Captura automática do valor (Android)** — plugin nativo (AccessibilityService)
+  que lê a oferta da Uber/99 na tela. Distribuição por APK (fora da Play Store).
 - 📊 **Gráficos** de tendência e comparativos
 - 📤 **Exportar** relatórios (PDF/planilha)
 - 🔔 Notificações (PWA push)

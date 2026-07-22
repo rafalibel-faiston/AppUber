@@ -2,7 +2,7 @@
 import uuid
 from datetime import date, datetime, time
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Time, func
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Time, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .database import Base
@@ -101,6 +101,22 @@ class Gasto(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     usuario: Mapped["User"] = relationship(back_populates="gastos")
+
+
+class Agenda(Base):
+    """Planejamento do calendario: para cada dia, se o motorista pretende
+    trabalhar e quantas horas quer rodar. Um registro por (usuario, data)."""
+    __tablename__ = "agenda"
+    __table_args__ = (UniqueConstraint("usuario_id", "data", name="uq_agenda_user_data"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    usuario_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), index=True)
+
+    data: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    trabalhar: Mapped[bool] = mapped_column(Boolean, default=True)   # True = dia de trabalho / False = folga
+    horas_alvo: Mapped[float] = mapped_column(Float, default=0.0)    # horas que pretende rodar no dia
+    nota: Mapped[str | None] = mapped_column(String, nullable=True)  # anotacao livre (opcional)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class Meta(Base):

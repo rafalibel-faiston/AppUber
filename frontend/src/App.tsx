@@ -8,6 +8,7 @@ import Corridas from "./pages/Corridas";
 import Gastos from "./pages/Gastos";
 import Metas from "./pages/Metas";
 import Ajustes from "./pages/Ajustes";
+import Agenda from "./pages/Agenda";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -51,6 +52,14 @@ export default function App() {
             element={
               <Protected>
                 <Gastos />
+              </Protected>
+            }
+          />
+          <Route
+            path="/agenda"
+            element={
+              <Protected>
+                <Agenda />
               </Protected>
             }
           />

@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import settings
 from .database import Base, engine, ensure_columns
-from .routers import auth, config, corridas, dashboard, gastos, jornadas, metas, turnos
+from .routers import agenda, auth, config, corridas, dashboard, gastos, jornadas, metas, turnos
 
 # MVP: cria as tabelas no start e adiciona colunas novas em tabelas existentes.
 Base.metadata.create_all(bind=engine)
@@ -31,6 +31,7 @@ app.include_router(turnos.router)
 app.include_router(jornadas.router)
 app.include_router(gastos.router)
 app.include_router(metas.router)
+app.include_router(agenda.router)
 app.include_router(dashboard.router)
 
 
