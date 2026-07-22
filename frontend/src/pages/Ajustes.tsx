@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import Page from "../components/Page";
-import { api } from "../lib/api";
+import { api, getToken } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { brl } from "../lib/format";
+import { abrirAcessibilidade, configurarCaptura, ehAppNativo, statusCaptura } from "../lib/nativo";
 import type { Config, PlataformaComparacao } from "../lib/types";
 
 export default function Ajustes() {
@@ -11,11 +12,21 @@ export default function Ajustes() {
   const [comp, setComp] = useState<PlataformaComparacao[]>([]);
   const [salvo, setSalvo] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [capturaAtiva, setCapturaAtiva] = useState(false);
 
   useEffect(() => {
     api.get<Config>("/config").then(setCfg);
     api.get<PlataformaComparacao[]>("/dashboard/plataformas?periodo=mensal").then(setComp);
+    statusCaptura().then((s) => setCapturaAtiva(!!s?.acessibilidade));
   }, []);
+
+  // Sempre que o custo por km é carregado, repassa para o serviço nativo.
+  useEffect(() => {
+    if (cfg && ehAppNativo()) {
+      const t = getToken();
+      if (t) configurarCaptura(t, cfg.custo_por_km);
+    }
+  }, [cfg]);
 
   function set(campo: keyof Config, valor: string) {
     if (!cfg) return;
@@ -119,6 +130,50 @@ export default function Ajustes() {
             {salvando ? "Salvando..." : salvo ? "✓ Salvo" : "Salvar custos"}
           </button>
         </div>
+      )}
+
+      {/* Captura automática (só no app Android) */}
+      {ehAppNativo() && (
+        <>
+          <div className="section-title" style={{ marginTop: 30 }}>
+            <h3>🤖 Captura automática</h3>
+          </div>
+          <div className="card">
+            <div style={{ fontSize: 14, color: "var(--text-dim)", marginBottom: 14 }}>
+              Quando a oferta aparece na tela da Uber/99, o Volante mostra na hora se vale a pena e deixa você
+              registrar a corrida com um toque.
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 14,
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: capturaAtiva ? "var(--accent)" : "var(--text-faint)",
+                }}
+              />
+              {capturaAtiva ? "Acessibilidade ativa" : "Acessibilidade desativada"}
+            </div>
+            <button
+              className="btn primary block"
+              onClick={() => abrirAcessibilidade().then(() => statusCaptura().then((s) => setCapturaAtiva(!!s?.acessibilidade)))}
+            >
+              {capturaAtiva ? "Abrir configurações de acessibilidade" : "Ativar captura"}
+            </button>
+            <div className="hint" style={{ marginTop: 10 }}>
+              Nas configurações, ative o serviço <b>Volante — captura de ofertas</b>. Ele só lê a tela da Uber/99.
+            </div>
+          </div>
+        </>
       )}
 
       {/* Comparador de plataformas */}

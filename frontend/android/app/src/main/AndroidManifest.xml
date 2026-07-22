@@ -33,6 +33,20 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Serviço que lê a oferta na tela da Uber/99 (captura automática) -->
+        <service
+            android:name=".OfertaService"
+            android:exported="false"
+            android:label="Volante — captura de ofertas"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/oferta_service_config" />
+        </service>
     </application>
 
     <!-- Permissions -->
