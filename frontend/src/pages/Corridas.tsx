@@ -5,6 +5,7 @@ import Sheet from "../components/Sheet";
 import { api } from "../lib/api";
 import { useTurno } from "../lib/turno";
 import { brl, hojeISO } from "../lib/format";
+import { interpretarCorrida, ouvirCorrida, reconhecimentoDisponivel } from "../lib/voz";
 import type { Corrida, ValeAPena } from "../lib/types";
 
 const plataformas = [
@@ -28,6 +29,8 @@ export default function Corridas() {
   const [valor, setValor] = useState("");
   const [km, setKm] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [ouvindo, setOuvindo] = useState(false);
+  const [vozMsg, setVozMsg] = useState<string | null>(null);
   const { rodando, decorridoMs } = useTurno();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -73,6 +76,44 @@ export default function Corridas() {
   async function remover(id: string) {
     await api.del(`/corridas/${id}`);
     setLista((l) => l.filter((c) => c.id !== id));
+  }
+
+  async function falar() {
+    if (ouvindo) return;
+    setVozMsg(null);
+    if (!reconhecimentoDisponivel()) {
+      setVozMsg(
+        "🎙️ Reconhecimento de voz indisponível aqui. Funciona no navegador Chrome; no APK ele entra numa próxima versão (plugin nativo)."
+      );
+      return;
+    }
+    setOuvindo(true);
+    try {
+      const texto = await ouvirCorrida();
+      const r = interpretarCorrida(texto);
+      if (r.valor != null) setValor(String(r.valor).replace(".", ","));
+      if (r.km != null) setKm(String(r.km).replace(".", ","));
+      if (r.plataforma) setPlataforma(r.plataforma);
+
+      const partes: string[] = [];
+      if (r.valor != null) partes.push(brl(r.valor));
+      if (r.km != null) partes.push(`${r.km} km`);
+      if (r.plataforma) partes.push(nomePlat(r.plataforma));
+
+      if (r.valor != null) {
+        setVozMsg(`🎙️ Entendi: ${partes.join(" · ")} — confira e toque em +`);
+      } else {
+        setVozMsg(`🎙️ Ouvi "${texto}", mas não achei o valor. Tente: "corrida de 50 reais e 2 km".`);
+      }
+    } catch (e) {
+      const cod = e instanceof Error ? e.message : "";
+      if (cod === "sem-fala") setVozMsg("🎙️ Não ouvi nada. Toque no microfone e fale a corrida.");
+      else if (cod === "not-allowed" || cod === "service-not-allowed")
+        setVozMsg("🎙️ Permissão de microfone negada. Libere o microfone e tente de novo.");
+      else setVozMsg("🎙️ Não consegui reconhecer. Tente de novo.");
+    } finally {
+      setOuvindo(false);
+    }
   }
 
   async function calcularVale() {
@@ -183,6 +224,12 @@ export default function Corridas() {
         />
         <span>km da corrida (opcional)</span>
       </div>
+
+      <button className={`voz-btn ${ouvindo ? "on" : ""}`} onClick={falar} disabled={ouvindo}>
+        <span className="voz-ico">🎙️</span>
+        {ouvindo ? "Ouvindo... fale a corrida" : "Registrar por voz"}
+      </button>
+      {vozMsg && <div className="voz-msg">{vozMsg}</div>}
 
       <button className="vp-trigger" onClick={abrirVale}>
         🤔 Vale a pena? — calcule antes de aceitar
