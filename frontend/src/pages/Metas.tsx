@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Page from "../components/Page";
 import { api } from "../lib/api";
-import { brl } from "../lib/format";
-import type { Meta } from "../lib/types";
+import { brl, hojeISO } from "../lib/format";
+import type { DashboardResumo, Meta } from "../lib/types";
 
 const periodos = [
   { id: "diaria", label: "Diária" },
@@ -17,9 +17,10 @@ const labelP = (p: string) => periodos.find((x) => x.id === p)?.label ?? p;
 export default function Metas() {
   const [lista, setLista] = useState<Meta[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [periodo, setPeriodo] = useState<PeriodoId>("semanal");
+  const [periodo, setPeriodo] = useState<PeriodoId>("mensal");
   const [valor, setValor] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [derivada, setDerivada] = useState<{ diaria: number | null; semanal: number | null } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function carregar() {
@@ -29,6 +30,21 @@ export default function Metas() {
       .finally(() => setCarregando(false));
   }
   useEffect(carregar, []);
+
+  const temMensal = lista.some((m) => m.periodo === "mensal");
+
+  // Quando ha meta mensal, mostra as metas de dia/semana que o app calcula
+  // pelos dias marcados na Agenda.
+  useEffect(() => {
+    if (!temMensal) { setDerivada(null); return; }
+    const h = hojeISO();
+    Promise.all([
+      api.get<DashboardResumo>(`/dashboard/resumo?periodo=diaria&hoje=${h}`),
+      api.get<DashboardResumo>(`/dashboard/resumo?periodo=semanal&hoje=${h}`),
+    ])
+      .then(([d, s]) => setDerivada({ diaria: d.meta_valor, semanal: s.meta_valor }))
+      .catch(() => setDerivada(null));
+  }, [temMensal, lista]);
 
   async function adicionar() {
     const v = parseFloat(valor.replace(",", "."));
@@ -99,8 +115,31 @@ export default function Metas() {
         </button>
       </div>
       <div className="km-opt">
-        <span>Meta de lucro líquido {labelP(periodo).toLowerCase()} — o progresso aparece no Painel</span>
+        <span>
+          {periodo === "mensal"
+            ? "Defina a mensal — o app divide em semana e dia pelos dias que você marcar na Agenda"
+            : `Meta de lucro líquido ${labelP(periodo).toLowerCase()} — o progresso aparece no Painel`}
+        </span>
       </div>
+
+      {temMensal && derivada && (derivada.diaria || derivada.semanal) && (
+        <div className="derivada">
+          <div className="dv-tit">📅 Calculado pela sua Agenda</div>
+          <div className="dv-grid">
+            <div className="dv-item">
+              <span className="dv-k">Por dia de trabalho</span>
+              <span className="dv-v">{derivada.diaria ? brl(derivada.diaria) : "—"}</span>
+            </div>
+            <div className="dv-item">
+              <span className="dv-k">Nesta semana</span>
+              <span className="dv-v">{derivada.semanal ? brl(derivada.semanal) : "—"}</span>
+            </div>
+          </div>
+          <div className="dv-hint">
+            Marque seus dias de trabalho na Agenda pra afinar esses valores.
+          </div>
+        </div>
+      )}
 
       <div className="section-title">
         <h3>Minhas metas</h3>

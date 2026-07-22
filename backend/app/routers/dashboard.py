@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user
-from ..models import Config, Corrida, Gasto, Meta, Turno, User
+from ..models import Agenda, Config, Corrida, Gasto, Meta, Turno, User
 from ..schemas import DashboardResumo, Insight, PlataformaComparacao, SerieDia
 from ..utils import intervalo_periodo
 
@@ -21,13 +21,66 @@ def _brl(v: float) -> str:
     return f"R$ {s}"
 
 
+def _dias_trabalho(db: Session, user_id: str, inicio: date, fim: date) -> int:
+    """Dias marcados como trabalho na Agenda dentro do intervalo."""
+    return db.scalar(
+        select(func.count()).select_from(Agenda).where(
+            Agenda.usuario_id == user_id,
+            Agenda.trabalhar.is_(True),
+            Agenda.data >= inicio,
+            Agenda.data <= fim,
+        )
+    ) or 0
+
+
+def _meta_efetiva(
+    db: Session, user_id: str, periodo: str, inicio: date, fim: date, ref: date
+) -> float | None:
+    """Meta do periodo. Se existir meta MENSAL, distribui em semanal/diaria
+    pelos dias que o motorista marcou na Agenda (cai em dias corridos se a
+    Agenda estiver vazia). Sem meta mensal, usa a meta explicita do periodo."""
+    mensal = db.scalar(
+        select(Meta)
+        .where(Meta.usuario_id == user_id, Meta.periodo == "mensal", Meta.ativo.is_(True))
+        .order_by(Meta.criado_em.desc())
+    )
+    if mensal and mensal.valor_alvo > 0:
+        m = mensal.valor_alvo
+        if periodo == "mensal":
+            return round(m, 2)
+
+        mes_ini, mes_fim = intervalo_periodo("mensal", ref)
+        dias_mes = _dias_trabalho(db, user_id, mes_ini, mes_fim)
+        if dias_mes > 0:
+            por_dia = m / dias_mes
+            if periodo == "diaria":
+                return round(por_dia, 2)
+            dias_semana = _dias_trabalho(db, user_id, inicio, fim)  # semana pedida
+            return round(por_dia * dias_semana, 2) if dias_semana > 0 else None
+        # Agenda vazia: distribui igual pelos dias corridos do mes
+        corridos = (mes_fim - mes_ini).days + 1
+        por_dia = m / corridos
+        if periodo == "diaria":
+            return round(por_dia, 2)
+        return round(por_dia * 7, 2)
+
+    explicita = db.scalar(
+        select(Meta)
+        .where(Meta.usuario_id == user_id, Meta.periodo == periodo, Meta.ativo.is_(True))
+        .order_by(Meta.criado_em.desc())
+    )
+    return round(explicita.valor_alvo, 2) if explicita else None
+
+
 @router.get("/resumo", response_model=DashboardResumo)
 def resumo(
     periodo: str = Query("semanal", pattern="^(diaria|semanal|mensal)$"),
+    hoje: date | None = Query(None),  # data local do cliente (evita erro de fuso)
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    inicio, fim = intervalo_periodo(periodo)
+    ref = hoje or date.today()
+    inicio, fim = intervalo_periodo(periodo, ref)
 
     corridas = db.scalars(
         select(Corrida).where(
@@ -76,14 +129,7 @@ def resumo(
 
     lucro = ganho_bruto - total_gastos
 
-    meta = db.scalar(
-        select(Meta).where(
-            Meta.usuario_id == user.id,
-            Meta.periodo == periodo,
-            Meta.ativo.is_(True),
-        ).order_by(Meta.criado_em.desc())
-    )
-    meta_valor = meta.valor_alvo if meta else None
+    meta_valor = _meta_efetiva(db, user.id, periodo, inicio, fim, ref)
     meta_progresso = None
     if meta_valor and meta_valor > 0:
         meta_progresso = round(max(lucro, 0) / meta_valor, 4)
@@ -179,11 +225,12 @@ def _lucro_por_dia(db: Session, user_id: str, inicio: date, fim: date) -> dict[d
 @router.get("/serie", response_model=list[SerieDia])
 def serie(
     dias: int = Query(14, ge=1, le=90),
+    hoje: date | None = Query(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     """Serie diaria de lucro (ganho - gastos) para o grafico dos ultimos N dias."""
-    fim = date.today()
+    fim = hoje or date.today()
     inicio = fim - timedelta(days=dias - 1)
     por_dia = _lucro_por_dia(db, user.id, inicio, fim)
     return [
@@ -199,8 +246,13 @@ def serie(
 
 
 @router.get("/insights", response_model=list[Insight])
-def insights(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def insights(
+    hoje: date | None = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """Avisos automaticos (critico/atencao/bom) a partir dos numeros do motorista."""
+    ref = hoje or date.today()
     cfg = db.scalar(select(Config).where(Config.usuario_id == user.id))
     custo_km = 0.0
     alvo_km = 0.0
@@ -209,7 +261,7 @@ def insights(db: Session = Depends(get_db), user: User = Depends(get_current_use
         alvo_km = cfg.meta_lucro_por_km if cfg.meta_lucro_por_km > 0 else custo_km
 
     # --- Semana atual ---
-    ini_s, fim_s = intervalo_periodo("semanal")
+    ini_s, fim_s = intervalo_periodo("semanal", ref)
     corr_s = db.scalars(
         select(Corrida).where(
             Corrida.usuario_id == user.id, Corrida.data >= ini_s, Corrida.data <= fim_s
@@ -239,7 +291,7 @@ def insights(db: Session = Depends(get_db), user: User = Depends(get_current_use
     )
 
     # --- Melhor dia (30 dias) ---
-    hoje = date.today()
+    hoje = ref
     por_dia_30 = _lucro_por_dia(db, user.id, hoje - timedelta(days=29), hoje)
     melhor_dia, melhor_lucro = None, 0.0
     for dt, v in por_dia_30.items():

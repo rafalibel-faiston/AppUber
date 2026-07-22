@@ -18,7 +18,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { rodando, pontos, kmGps, gpsErro } = useTurno();
   const navigate = useNavigate();
-  const [periodo, setPeriodo] = useState<Periodo>("semanal");
+  const [periodo, setPeriodo] = useState<Periodo>("diaria");
   const [resumo, setResumo] = useState<DashboardResumo | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(false);
@@ -29,12 +29,13 @@ export default function Dashboard() {
   const [serie, setSerie] = useState<SerieDia[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [aluguel, setAluguel] = useState<Aluguel | null>(null);
+  const [avisoFechado, setAvisoFechado] = useState(false);
 
   useEffect(() => {
     setCarregando(true);
     setErro(false);
     api
-      .get<DashboardResumo>(`/dashboard/resumo?periodo=${periodo}`)
+      .get<DashboardResumo>(`/dashboard/resumo?periodo=${periodo}&hoje=${hojeISO()}`)
       .then((r) => setResumo(r))
       .catch(() => setErro(true))
       .finally(() => setCarregando(false));
@@ -46,8 +47,8 @@ export default function Dashboard() {
       .get<AgendaDia[]>(`/agenda?inicio=${hoje}&fim=${hoje}`)
       .then((l) => setPlanoHoje(l[0] ?? null))
       .catch(() => setPlanoHoje(null));
-    api.get<SerieDia[]>("/dashboard/serie?dias=14").then(setSerie).catch(() => setSerie([]));
-    api.get<Insight[]>("/dashboard/insights").then(setInsights).catch(() => setInsights([]));
+    api.get<SerieDia[]>(`/dashboard/serie?dias=14&hoje=${hoje}`).then(setSerie).catch(() => setSerie([]));
+    api.get<Insight[]>(`/dashboard/insights?hoje=${hoje}`).then(setInsights).catch(() => setInsights([]));
     api.get<Aluguel[]>("/alugueis/meu").then((l) => setAluguel(l[0] ?? null)).catch(() => setAluguel(null));
   }, [recarga]);
 
@@ -134,17 +135,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {insights.length > 0 && (
-        <div className="avisos">
-          {insights.map((a, i) => (
-            <div key={i} className={`aviso ${a.nivel}`}>
-              <div className="av-ico">{a.icone}</div>
-              <div className="av-body">
-                <div className="av-tit">{a.titulo}</div>
-                <div className="av-txt">{a.texto}</div>
-              </div>
-            </div>
-          ))}
+      {insights[0] && !avisoFechado && (
+        <div className={`aviso-note ${insights[0].nivel}`}>
+          <span className="an-ico">{insights[0].icone}</span>
+          <span className="an-txt">
+            <b>{insights[0].titulo}.</b> {insights[0].texto}
+          </span>
+          <button className="an-x" onClick={() => setAvisoFechado(true)} aria-label="Dispensar">
+            ✕
+          </button>
         </div>
       )}
 

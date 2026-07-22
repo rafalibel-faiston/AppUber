@@ -893,26 +893,67 @@ a {
 }
 .aluguel-card .al-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 3px; }
 
-/* ---------- Avisos (insights) ---------- */
-.avisos { display: grid; gap: 10px; margin-bottom: 18px; }
-.aviso {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
+/* ---------- Meta derivada (calculada pela Agenda) ---------- */
+.derivada {
+  margin-top: 14px;
   padding: 14px;
   border-radius: var(--radius-sm);
+  background: linear-gradient(120deg, rgba(111, 141, 255, 0.1), var(--surface) 70%);
+  border: 1px solid var(--border-soft);
+}
+.derivada .dv-tit { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.derivada .dv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.derivada .dv-item {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 11px;
+  padding: 10px 12px;
+}
+.derivada .dv-k { display: block; font-size: 11.5px; color: var(--text-dim); }
+.derivada .dv-v {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--pos);
+  font-variant-numeric: tabular-nums;
+}
+.derivada .dv-hint { font-size: 11.5px; color: var(--text-faint); margin-top: 10px; }
+
+/* ---------- Aviso discreto (uma notificacao) ---------- */
+.aviso-note {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px 9px 12px;
+  margin-bottom: 16px;
+  border-radius: 11px;
   background: var(--surface);
   border: 1px solid var(--border-soft);
-  border-left-width: 4px;
+  border-left: 3px solid var(--info);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.35;
 }
-.aviso .av-ico { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
-.aviso .av-body { min-width: 0; }
-.aviso .av-tit { font-weight: 600; font-size: 14.5px; }
-.aviso .av-txt { font-size: 12.5px; color: var(--text-dim); margin-top: 2px; line-height: 1.35; }
-.aviso.critico { border-left-color: var(--neg); background: rgba(255, 93, 108, 0.07); }
-.aviso.atencao { border-left-color: var(--warn); background: rgba(255, 176, 32, 0.07); }
-.aviso.bom { border-left-color: var(--pos); background: rgba(255, 191, 71, 0.06); }
-.aviso.info { border-left-color: var(--info); background: rgba(111, 141, 255, 0.06); }
+.aviso-note .an-ico { font-size: 15px; flex-shrink: 0; }
+.aviso-note .an-txt { flex: 1; min-width: 0; }
+.aviso-note .an-txt b { color: var(--text); font-weight: 600; }
+.aviso-note .an-x {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  color: var(--text-faint);
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+}
+.aviso-note .an-x:active { background: var(--surface-3); }
+.aviso-note.critico { border-left-color: var(--neg); }
+.aviso-note.atencao { border-left-color: var(--warn); }
+.aviso-note.bom { border-left-color: var(--pos); }
+.aviso-note.info { border-left-color: var(--info); }
 
 /* ---------- Gráfico de ganhos ---------- */
 .grafico { padding: 16px 14px; }
