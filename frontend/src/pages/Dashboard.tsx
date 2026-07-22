@@ -359,6 +359,14 @@ export default function Dashboard() {
             </span>
             <span className="chev">›</span>
           </button>
+          <button className="menu-item" onClick={() => irPara("/ajuda")}>
+            <span className="mi-ico">❓</span>
+            <span className="mi-txt">
+              <b>Ajuda</b>
+              <small>Guia com tudo que o app faz</small>
+            </span>
+            <span className="chev">›</span>
+          </button>
         </div>
       </Sheet>
     </Page>

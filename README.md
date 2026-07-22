@@ -128,8 +128,12 @@ Ganhos visuais + avisos automáticos · Registrar corrida por voz · Aluguel de 
 (perfil Locadora)**.
 
 > **Perfis:** no cadastro escolhe-se **Motorista** (padrão) ou **Locadora**. A locadora
-> tem uma tela própria pra atribuir aluguéis por e-mail do motorista, ver vencimentos
-> e registrar pagamentos; o motorista vê o cartão do aluguel no Painel dele.
+> tem uma tela própria com **catálogo de carros** (detalhes + disponibilidade) e
+> **aluguéis** por e-mail do motorista (vencimentos, pagamentos, troca de carro); o
+> motorista vê o cartão do aluguel no Painel e pode pedir troca de carro.
+
+> **Guia interativo:** tela de **Ajuda** (menu ☰ / botão ❓) com busca e seções
+> expansíveis cobrindo tudo, alternando entre os perfis Motorista e Locadora.
 
 > **Navegação (3 abas):** a barra inferior tem só **Painel · Corridas · Gastos** —
 > as funções principais a 1 toque. **Agenda** fica num atalho no Painel, e

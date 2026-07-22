@@ -10,6 +10,7 @@ import Metas from "./pages/Metas";
 import Ajustes from "./pages/Ajustes";
 import Agenda from "./pages/Agenda";
 import Locadora from "./pages/Locadora";
+import Guia from "./pages/Guia";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
           <Routes location={location} key={location.pathname}>
             <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="/" element={<Protected><Locadora /></Protected>} />
+            <Route path="/ajuda" element={<Protected><Guia /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
@@ -77,6 +79,14 @@ export default function App() {
             element={
               <Protected>
                 <Agenda />
+              </Protected>
+            }
+          />
+          <Route
+            path="/ajuda"
+            element={
+              <Protected>
+                <Guia />
               </Protected>
             }
           />

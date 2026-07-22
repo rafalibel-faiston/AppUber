@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Page from "../components/Page";
 import Sheet from "../components/Sheet";
@@ -27,6 +28,7 @@ function detalheCarro(c: Carro): string {
 
 export default function Locadora() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [aba, setAba] = useState<"alugueis" | "carros">("alugueis");
   const [lista, setLista] = useState<Aluguel[]>([]);
   const [carros, setCarros] = useState<Carro[]>([]);
@@ -154,7 +156,10 @@ export default function Locadora() {
           <div className="hello">Painel da locadora</div>
           <div className="name">{user?.nome.split(" ")[0]}</div>
         </div>
-        <button className="icon-btn" onClick={logout} aria-label="Sair">⇥</button>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="icon-btn" onClick={() => navigate("/ajuda")} aria-label="Ajuda">❓</button>
+          <button className="icon-btn" onClick={logout} aria-label="Sair">⇥</button>
+        </div>
       </div>
 
       {resumo && (
