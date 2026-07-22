@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     nome: str = Field(min_length=1, max_length=120)
     email: EmailStr
     senha: str = Field(min_length=6, max_length=128)
+    papel: str = Field(default="motorista", pattern="^(motorista|locadora)$")
 
 
 class UserLogin(BaseModel):
@@ -21,6 +22,7 @@ class UserOut(BaseModel):
     id: str
     nome: str
     email: EmailStr
+    papel: str = "motorista"
 
 
 class Token(BaseModel):
@@ -197,6 +199,62 @@ class MetaUpdate(BaseModel):
 class MetaOut(MetaBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
+
+
+# ----- Aluguel de carro -----
+class AluguelCreate(BaseModel):
+    motorista_email: EmailStr
+    carro: str | None = None
+    valor: float = Field(gt=0)
+    periodicidade: str = Field(default="semanal", pattern="^(semanal|mensal)$")
+    dia_vencimento: int = Field(default=1, ge=0, le=31)
+
+
+class AluguelUpdate(BaseModel):
+    carro: str | None = None
+    valor: float | None = Field(default=None, gt=0)
+    periodicidade: str | None = Field(default=None, pattern="^(semanal|mensal)$")
+    dia_vencimento: int | None = Field(default=None, ge=0, le=31)
+    ativo: bool | None = None
+
+
+class AluguelOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    motorista_email: str
+    motorista_nome: str | None = None
+    vinculado: bool = False           # se o e-mail ja tem conta de motorista
+    carro: str | None = None
+    valor: float
+    periodicidade: str
+    dia_vencimento: int
+    ativo: bool
+    # calculados:
+    prox_vencimento: date | None = None
+    dias_restantes: int | None = None
+    status: str = "pendente"          # em_dia | pendente | atrasado
+    ultimo_pagamento: date | None = None
+
+
+class PagamentoCreate(BaseModel):
+    valor: float | None = Field(default=None, gt=0)  # default: valor do aluguel
+    data: date | None = None                          # default: hoje
+    competencia: str | None = None                    # default: competencia atual
+
+
+class PagamentoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    data: date
+    valor: float
+    competencia: str
+
+
+class LocadoraResumo(BaseModel):
+    alugueis_ativos: int
+    receita_mensal_prevista: float
+    a_vencer_7dias: int
+    atrasados: int
 
 
 # ----- Agenda (calendario de planejamento) -----

@@ -28,10 +28,28 @@ def register(dados: UserCreate, db: Session = Depends(get_db)):
     existe = db.scalar(select(User).where(User.email == dados.email.lower()))
     if existe:
         raise HTTPException(status_code=409, detail="E-mail ja cadastrado")
-    user = User(nome=dados.nome, email=dados.email.lower(), senha_hash=hash_senha(dados.senha))
+    user = User(
+        nome=dados.nome,
+        email=dados.email.lower(),
+        senha_hash=hash_senha(dados.senha),
+        papel=dados.papel,
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Se ja existem alugueis criados para este e-mail (antes da conta existir),
+    # vincula-os agora ao motorista recem-cadastrado.
+    if user.papel == "motorista":
+        from ..models import Aluguel  # import local para evitar ciclo
+        pendentes = db.scalars(
+            select(Aluguel).where(Aluguel.motorista_email == user.email, Aluguel.motorista_id.is_(None))
+        ).all()
+        for a in pendentes:
+            a.motorista_id = user.id
+        if pendentes:
+            db.commit()
+
     return Token(access_token=criar_token(user.id), user=UserOut.model_validate(user))
 
 

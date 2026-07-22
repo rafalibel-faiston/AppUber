@@ -19,6 +19,7 @@ class User(Base):
     nome: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     senha_hash: Mapped[str] = mapped_column(String, nullable=False)
+    papel: Mapped[str] = mapped_column(String, default="motorista")  # motorista | locadora
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     jornadas: Mapped[list["Jornada"]] = relationship(back_populates="usuario", cascade="all, delete-orphan")
@@ -101,6 +102,36 @@ class Gasto(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     usuario: Mapped["User"] = relationship(back_populates="gastos")
+
+
+class Aluguel(Base):
+    """Aluguel de carro que uma locadora atribui a um motorista (pelo e-mail).
+    O motorista, se tiver conta com esse e-mail, ve o aluguel no app dele."""
+    __tablename__ = "alugueis"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    locadora_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), index=True)
+    motorista_email: Mapped[str] = mapped_column(String, index=True)
+    motorista_id: Mapped[str | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True, index=True)
+
+    carro: Mapped[str | None] = mapped_column(String, nullable=True)   # ex: "Onix ABC1D23"
+    valor: Mapped[float] = mapped_column(Float, nullable=False)
+    periodicidade: Mapped[str] = mapped_column(String, default="semanal")  # semanal | mensal
+    dia_vencimento: Mapped[int] = mapped_column(Integer, default=1)    # semanal: 0=Seg..6=Dom / mensal: 1..31
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PagamentoAluguel(Base):
+    """Um pagamento registrado pela locadora para um aluguel."""
+    __tablename__ = "pagamentos_aluguel"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    aluguel_id: Mapped[str] = mapped_column(ForeignKey("alugueis.id"), index=True)
+    data: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    valor: Mapped[float] = mapped_column(Float, nullable=False)
+    competencia: Mapped[str] = mapped_column(String, nullable=False)  # "2026-07" ou "2026-W30"
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
 class Agenda(Base):

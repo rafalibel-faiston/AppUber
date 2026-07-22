@@ -124,7 +124,12 @@ Quer testar no celular direto do seu PC, sem subir ainda?
 ## 🗺️ Roadmap (próximas fases)
 
 Já entregue: **Auth · Dashboard · Corridas · Gastos · Metas · Agenda (calendário) ·
-Ganhos visuais + avisos automáticos · Registrar corrida por voz**.
+Ganhos visuais + avisos automáticos · Registrar corrida por voz · Aluguel de carro
+(perfil Locadora)**.
+
+> **Perfis:** no cadastro escolhe-se **Motorista** (padrão) ou **Locadora**. A locadora
+> tem uma tela própria pra atribuir aluguéis por e-mail do motorista, ver vencimentos
+> e registrar pagamentos; o motorista vê o cartão do aluguel no Painel dele.
 
 > **Navegação (3 abas):** a barra inferior tem só **Painel · Corridas · Gastos** —
 > as funções principais a 1 toque. **Agenda** fica num atalho no Painel, e

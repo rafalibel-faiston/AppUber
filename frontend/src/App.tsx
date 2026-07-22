@@ -9,6 +9,7 @@ import Gastos from "./pages/Gastos";
 import Metas from "./pages/Metas";
 import Ajustes from "./pages/Ajustes";
 import Agenda from "./pages/Agenda";
+import Locadora from "./pages/Locadora";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -25,6 +26,22 @@ function Protected({ children }: { children: React.ReactNode }) {
 export default function App() {
   const { user } = useAuth();
   const location = useLocation();
+  const ehLocadora = user?.papel === "locadora";
+
+  // Locadora tem uma experiencia propria (sem as abas de motorista).
+  if (ehLocadora) {
+    return (
+      <div className="app">
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/login" element={<Navigate to="/" replace />} />
+            <Route path="/" element={<Protected><Locadora /></Protected>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AnimatePresence>
+      </div>
+    );
+  }
 
   return (
     <div className="app">

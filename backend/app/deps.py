@@ -26,3 +26,13 @@ def get_current_user(
     if user is None:
         raise cred_exc
     return user
+
+
+def get_locadora(user: User = Depends(get_current_user)) -> User:
+    """Garante que o usuario autenticado e uma locadora."""
+    if user.papel != "locadora":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas contas de locadora podem acessar isto",
+        )
+    return user

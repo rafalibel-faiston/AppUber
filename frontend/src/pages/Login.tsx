@@ -9,6 +9,7 @@ export default function Login() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [papel, setPapel] = useState<"motorista" | "locadora">("motorista");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
@@ -18,7 +19,7 @@ export default function Login() {
     setCarregando(true);
     try {
       if (modo === "login") await login(email, senha);
-      else await register(nome, email, senha);
+      else await register(nome, email, senha, papel);
     } catch (err) {
       setErro(err instanceof ApiError ? err.message : "Não foi possível conectar");
     } finally {
@@ -37,10 +38,31 @@ export default function Login() {
 
       <form onSubmit={submit}>
         {modo === "cadastro" && (
-          <div className="field">
-            <label>Nome</label>
-            <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Como te chamam" required />
-          </div>
+          <>
+            <div className="field">
+              <label>Nome</label>
+              <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Como te chamam" required />
+            </div>
+            <div className="field">
+              <label>Você é</label>
+              <div className="papel-row">
+                <button
+                  type="button"
+                  className={`papel ${papel === "motorista" ? "active" : ""}`}
+                  onClick={() => setPapel("motorista")}
+                >
+                  🚗 Motorista
+                </button>
+                <button
+                  type="button"
+                  className={`papel ${papel === "locadora" ? "active" : ""}`}
+                  onClick={() => setPapel("locadora")}
+                >
+                  🔑 Locadora
+                </button>
+              </div>
+            </div>
+          </>
         )}
         <div className="field">
           <label>E-mail</label>

@@ -9,7 +9,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useTurno } from "../lib/turno";
 import { brl, hojeISO } from "../lib/format";
-import type { AgendaDia, DashboardResumo, Insight, SerieDia } from "../lib/types";
+import type { AgendaDia, Aluguel, DashboardResumo, Insight, SerieDia } from "../lib/types";
 
 type Periodo = "diaria" | "semanal" | "mensal";
 const labels: Record<Periodo, string> = { diaria: "Hoje", semanal: "Semana", mensal: "Mês" };
@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [planoHoje, setPlanoHoje] = useState<AgendaDia | null>(null);
   const [serie, setSerie] = useState<SerieDia[]>([]);
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [aluguel, setAluguel] = useState<Aluguel | null>(null);
 
   useEffect(() => {
     setCarregando(true);
@@ -47,6 +48,7 @@ export default function Dashboard() {
       .catch(() => setPlanoHoje(null));
     api.get<SerieDia[]>("/dashboard/serie?dias=14").then(setSerie).catch(() => setSerie([]));
     api.get<Insight[]>("/dashboard/insights").then(setInsights).catch(() => setInsights([]));
+    api.get<Aluguel[]>("/alugueis/meu").then((l) => setAluguel(l[0] ?? null)).catch(() => setAluguel(null));
   }, [recarga]);
 
   function irPara(rota: string) {
@@ -90,6 +92,28 @@ export default function Dashboard() {
         </div>
         <div className="chev">›</div>
       </button>
+
+      {aluguel && (
+        <div className={`aluguel-card ${aluguel.status}`}>
+          <div className="al-ico">🔑</div>
+          <div className="al-body">
+            <div className="al-top">
+              <span className="al-t">Aluguel do carro{aluguel.carro ? ` · ${aluguel.carro}` : ""}</span>
+              <span className="al-val">{brl(aluguel.valor)}</span>
+            </div>
+            <div className="al-sub">
+              {aluguel.status === "atrasado"
+                ? "⚠️ Pagamento em atraso"
+                : aluguel.status === "em_dia"
+                ? "✓ Em dia"
+                : aluguel.dias_restantes !== null
+                ? `Vence em ${aluguel.dias_restantes} ${aluguel.dias_restantes === 1 ? "dia" : "dias"}`
+                : "Aluguel ativo"}
+              {aluguel.periodicidade === "semanal" ? " · semanal" : " · mensal"}
+            </div>
+          </div>
+        </div>
+      )}
 
       {(rodando || pontos.length > 0) && (
         <div className="mapa-card">

@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, clearToken, getToken, setToken } from "./api";
-import type { AuthResponse, User } from "./types";
+import type { AuthResponse, Papel, User } from "./types";
 
 interface AuthCtx {
   user: User | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
-  register: (nome: string, email: string, senha: string) => Promise<void>;
+  register: (nome: string, email: string, senha: string, papel: Papel) => Promise<void>;
   logout: () => void;
 }
 
@@ -34,8 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }
 
-  async function register(nome: string, email: string, senha: string) {
-    const res = await api.post<AuthResponse>("/auth/register", { nome, email, senha });
+  async function register(nome: string, email: string, senha: string, papel: Papel) {
+    const res = await api.post<AuthResponse>("/auth/register", { nome, email, senha, papel });
     setToken(res.access_token);
     setUser(res.user);
   }

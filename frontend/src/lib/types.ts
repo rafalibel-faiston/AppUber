@@ -1,7 +1,40 @@
+export type Papel = "motorista" | "locadora";
+
 export interface User {
   id: string;
   nome: string;
   email: string;
+  papel: Papel;
+}
+
+export interface Aluguel {
+  id: string;
+  motorista_email: string;
+  motorista_nome: string | null;
+  vinculado: boolean;
+  carro: string | null;
+  valor: number;
+  periodicidade: "semanal" | "mensal";
+  dia_vencimento: number;
+  ativo: boolean;
+  prox_vencimento: string | null;
+  dias_restantes: number | null;
+  status: "em_dia" | "pendente" | "atrasado" | "inativo";
+  ultimo_pagamento: string | null;
+}
+
+export interface PagamentoAluguel {
+  id: string;
+  data: string;
+  valor: number;
+  competencia: string;
+}
+
+export interface LocadoraResumo {
+  alugueis_ativos: number;
+  receita_mensal_prevista: number;
+  a_vencer_7dias: number;
+  atrasados: number;
 }
 
 export interface AuthResponse {
