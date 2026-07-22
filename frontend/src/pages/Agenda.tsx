@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import Page from "../components/Page";
 import Sheet from "../components/Sheet";
 import { api } from "../lib/api";
@@ -9,7 +8,8 @@ import type { AgendaDia } from "../lib/types";
 
 const DIAS_SEM = ["D", "S", "T", "Q", "Q", "S", "S"];
 const PRESETS = [4, 6, 8, 10, 12];
-
+type Brush = "trabalho" | "folga" | "limpar";
+type Escopo = "todos" | "uteis" | "fds";
 type Mapa = Record<string, AgendaDia>;
 
 export default function Agenda() {
@@ -22,12 +22,28 @@ export default function Agenda() {
   const [mapa, setMapa] = useState<Mapa>({});
   const [carregando, setCarregando] = useState(true);
 
+  // Pincel + horas padrao
+  const [brush, setBrush] = useState<Brush>("trabalho");
+  const [horasPadrao, setHorasPadrao] = useState(8);
+
+  // Arrastar para pintar
+  const gridRef = useRef<HTMLDivElement>(null);
+  const pintandoRef = useRef(false);
+  const arrastouRef = useRef(false);
+  const inicioRef = useRef<string | null>(null);
+  const selRef = useRef<Set<string>>(new Set());
+  const [sel, setSel] = useState<Set<string>>(new Set());
+
   // Sheet de edicao de um dia
   const [aberto, setAberto] = useState(false);
   const [diaSel, setDiaSel] = useState<string | null>(null);
   const [modo, setModo] = useState<"trabalhar" | "folga">("trabalhar");
   const [horas, setHoras] = useState(8);
   const [salvando, setSalvando] = useState(false);
+
+  // Sheet de preencher o mes
+  const [preAberto, setPreAberto] = useState(false);
+  const [escopo, setEscopo] = useState<Escopo>("todos");
 
   const primeiroISO = ymd(ano, mes, 1);
   const ultimoDia = new Date(ano, mes + 1, 0).getDate();
@@ -48,7 +64,7 @@ export default function Agenda() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(carregar, [ano, mes]);
 
-  // Celulas do mes (6 semanas = 42 celulas, comecando no domingo).
+  // Celulas do mes (6 semanas, comecando no domingo).
   const celulas = useMemo(() => {
     const inicioSemana = new Date(ano, mes, 1).getDay(); // 0=Dom
     const arr: (number | null)[] = [];
@@ -58,7 +74,6 @@ export default function Agenda() {
     return arr;
   }, [ano, mes, ultimoDia]);
 
-  // Resumo do mes (a partir do que ja temos em memoria).
   const resumo = useMemo(() => {
     const dias = Object.values(mapa).filter((d) => d.data >= primeiroISO && d.data <= ultimoISO);
     const trabalho = dias.filter((d) => d.trabalhar);
@@ -81,12 +96,77 @@ export default function Agenda() {
     setAno(a);
   }
 
-  function abrirDia(dia: number) {
-    const iso = ymd(ano, mes, dia);
+  // ---------- aplicar em lote ----------
+  async function aplicar(dias: string[], b: Brush) {
+    if (!dias.length) return;
+    if (b === "limpar") {
+      // otimista
+      setMapa((m) => { const c = { ...m }; dias.forEach((d) => delete c[d]); return c; });
+      await api.post("/agenda/bulk", { datas: dias, limpar: true }).catch(() => carregar());
+      return;
+    }
+    const trabalhar = b === "trabalho";
+    const res = await api
+      .post<AgendaDia[]>("/agenda/bulk", { datas: dias, trabalhar, horas_alvo: trabalhar ? horasPadrao : 0 })
+      .catch(() => null);
+    if (res) setMapa((m) => { const c = { ...m }; res.forEach((d) => { c[d.data] = d; }); return c; });
+    else carregar();
+  }
+
+  // ---------- arrastar (pointer) ----------
+  function diaEmPonto(x: number, y: number): string | null {
+    const el = document.elementFromPoint(x, y) as HTMLElement | null;
+    const cell = el?.closest("[data-dia]") as HTMLElement | null;
+    return cell?.dataset.dia ?? null;
+  }
+
+  function onDown(e: React.PointerEvent) {
+    const cell = (e.target as HTMLElement).closest("[data-dia]") as HTMLElement | null;
+    const dia = cell?.dataset.dia;
+    if (!dia) return;
+    pintandoRef.current = true;
+    arrastouRef.current = false;
+    inicioRef.current = dia;
+    const s = new Set<string>([dia]);
+    selRef.current = s;
+    setSel(new Set(s));
+    try { gridRef.current?.setPointerCapture(e.pointerId); } catch { /* noop */ }
+  }
+
+  function onMove(e: React.PointerEvent) {
+    if (!pintandoRef.current) return;
+    const dia = diaEmPonto(e.clientX, e.clientY);
+    if (!dia) return;
+    if (dia !== inicioRef.current) arrastouRef.current = true;
+    if (!selRef.current.has(dia)) {
+      const s = new Set(selRef.current);
+      s.add(dia);
+      selRef.current = s;
+      setSel(s);
+    }
+  }
+
+  function onUp(e: React.PointerEvent) {
+    if (!pintandoRef.current) return;
+    pintandoRef.current = false;
+    try { gridRef.current?.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+    const dias = Array.from(selRef.current);
+    const arrastou = arrastouRef.current;
+    selRef.current = new Set();
+    setSel(new Set());
+    if (!arrastou && dias.length === 1) {
+      abrirDia(dias[0]); // toque simples = editar manualmente
+      return;
+    }
+    aplicar(dias, brush);
+  }
+
+  // ---------- editar um dia ----------
+  function abrirDia(iso: string) {
     const atual = mapa[iso];
     setDiaSel(iso);
     setModo(atual && !atual.trabalhar ? "folga" : "trabalhar");
-    setHoras(atual?.horas_alvo && atual.horas_alvo > 0 ? atual.horas_alvo : 8);
+    setHoras(atual?.horas_alvo && atual.horas_alvo > 0 ? atual.horas_alvo : horasPadrao);
     setAberto(true);
   }
 
@@ -106,16 +186,12 @@ export default function Agenda() {
     }
   }
 
-  async function limpar() {
+  async function limparDia() {
     if (!diaSel || salvando) return;
     setSalvando(true);
     try {
       await api.del(`/agenda/${diaSel}`);
-      setMapa((m) => {
-        const c = { ...m };
-        delete c[diaSel];
-        return c;
-      });
+      setMapa((m) => { const c = { ...m }; delete c[diaSel]; return c; });
       setAberto(false);
     } catch {
       setAberto(false);
@@ -123,6 +199,30 @@ export default function Agenda() {
       setSalvando(false);
     }
   }
+
+  // ---------- preencher o mes ----------
+  function datasEscopo(f: Escopo): string[] {
+    const arr: string[] = [];
+    for (let d = 1; d <= ultimoDia; d++) {
+      const wd = new Date(ano, mes, d).getDay();
+      const fds = wd === 0 || wd === 6;
+      if (f === "uteis" && fds) continue;
+      if (f === "fds" && !fds) continue;
+      arr.push(ymd(ano, mes, d));
+    }
+    return arr;
+  }
+
+  async function preencher(b: Brush) {
+    await aplicar(datasEscopo(escopo), b);
+    setPreAberto(false);
+  }
+
+  const brushLabel: Record<Brush, string> = {
+    trabalho: "Trabalho",
+    folga: "Folga",
+    limpar: "Limpar",
+  };
 
   return (
     <Page>
@@ -153,6 +253,35 @@ export default function Agenda() {
         </div>
       </div>
 
+      {/* Pincel */}
+      <div className="brush-bar">
+        {(["trabalho", "folga", "limpar"] as Brush[]).map((b) => (
+          <button
+            key={b}
+            className={`brush ${brush === b ? "active" : ""} ${b}`}
+            onClick={() => setBrush(b)}
+          >
+            {b === "trabalho" ? "🚗" : b === "folga" ? "😴" : "🧽"} {brushLabel[b]}
+          </button>
+        ))}
+      </div>
+
+      {/* Horas padrao (so faz sentido pintando trabalho) */}
+      {brush === "trabalho" && (
+        <div className="padrao-row">
+          <span className="lbl">Horas padrão</span>
+          <div className="mini-step">
+            <button onClick={() => setHorasPadrao((h) => Math.max(1, Math.round((h - 1) * 10) / 10))}>−</button>
+            <b>{horasPadrao}h</b>
+            <button onClick={() => setHorasPadrao((h) => Math.min(24, Math.round((h + 1) * 10) / 10))}>+</button>
+          </div>
+        </div>
+      )}
+
+      <div className="brush-hint">
+        Arraste o dedo pelos dias para marcar em série · toque num dia para ajustar
+      </div>
+
       {/* Navegacao de mes */}
       <div className="cal-nav">
         <button onClick={() => mudarMes(-1)} aria-label="Mês anterior">‹</button>
@@ -167,7 +296,14 @@ export default function Agenda() {
             <span key={i}>{d}</span>
           ))}
         </div>
-        <div className="cal-grid">
+        <div
+          className="cal-grid"
+          ref={gridRef}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={onUp}
+        >
           {celulas.map((dia, i) => {
             if (dia === null) return <div key={i} className="cal-cell empty" />;
             const iso = ymd(ano, mes, dia);
@@ -178,20 +314,16 @@ export default function Agenda() {
               isHoje ? "hoje" : "",
               plano?.trabalhar ? "trab" : "",
               plano && !plano.trabalhar ? "folga" : "",
+              sel.has(iso) ? "sel" : "",
             ].join(" ");
             return (
-              <motion.button
-                key={i}
-                className={cls}
-                whileTap={{ scale: 0.88 }}
-                onClick={() => abrirDia(dia)}
-              >
+              <div key={i} data-dia={iso} className={cls}>
                 <span className="d">{dia}</span>
                 {plano?.trabalhar && plano.horas_alvo > 0 && (
                   <span className="h">{plano.horas_alvo}h</span>
                 )}
                 {plano && !plano.trabalhar && <span className="h folga-ic">😴</span>}
-              </motion.button>
+              </div>
             );
           })}
         </div>
@@ -203,19 +335,62 @@ export default function Agenda() {
         <span><i className="dot hoje" /> Hoje</span>
       </div>
 
+      <button className="preencher-btn" onClick={() => setPreAberto(true)}>
+        ⚡ Preencher o mês com um padrão
+      </button>
+
+      {/* Sheet: preencher o mes */}
+      <Sheet open={preAberto} title="Preencher o mês" onClose={() => setPreAberto(false)}>
+        <div className="horas-label" style={{ marginTop: 0 }}>Quais dias?</div>
+        <div className="brush-bar" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          {([["todos", "Todos"], ["uteis", "Seg–Sex"], ["fds", "Sáb/Dom"]] as [Escopo, string][]).map(
+            ([id, lbl]) => (
+              <button
+                key={id}
+                className={`brush ${escopo === id ? "active" : ""}`}
+                onClick={() => setEscopo(id)}
+              >
+                {lbl}
+              </button>
+            )
+          )}
+        </div>
+
+        <div className="horas-label">Horas por dia</div>
+        <div className="stepper">
+          <button onClick={() => setHorasPadrao((h) => Math.max(1, Math.round((h - 0.5) * 10) / 10))}>−</button>
+          <div className="valor">
+            <b>{horasPadrao}</b>
+            <small>horas</small>
+          </div>
+          <button onClick={() => setHorasPadrao((h) => Math.min(24, Math.round((h + 0.5) * 10) / 10))}>+</button>
+        </div>
+        <div className="chips" style={{ marginTop: 14, justifyContent: "center" }}>
+          {PRESETS.map((p) => (
+            <div key={p} className={`chip ${horasPadrao === p ? "active" : ""}`} onClick={() => setHorasPadrao(p)}>
+              {p}h
+            </div>
+          ))}
+        </div>
+
+        <button className="btn primary" style={{ marginTop: 22 }} onClick={() => preencher("trabalho")}>
+          Marcar como trabalho ({horasPadrao}h)
+        </button>
+        <button className="btn ghost block" style={{ marginTop: 10 }} onClick={() => preencher("folga")}>
+          Marcar tudo como folga
+        </button>
+        <button className="btn ghost block" style={{ marginTop: 10 }} onClick={() => preencher("limpar")}>
+          Limpar o mês
+        </button>
+      </Sheet>
+
       {/* Sheet: editar um dia */}
       <Sheet open={aberto} title={diaSel ? dataLonga(diaSel) : ""} onClose={() => setAberto(false)}>
         <div className="modo-row">
-          <button
-            className={`modo ${modo === "trabalhar" ? "active" : ""}`}
-            onClick={() => setModo("trabalhar")}
-          >
+          <button className={`modo ${modo === "trabalhar" ? "active" : ""}`} onClick={() => setModo("trabalhar")}>
             🚗 Trabalhar
           </button>
-          <button
-            className={`modo ${modo === "folga" ? "active folga" : ""}`}
-            onClick={() => setModo("folga")}
-          >
+          <button className={`modo ${modo === "folga" ? "active folga" : ""}`} onClick={() => setModo("folga")}>
             😴 Folga
           </button>
         </div>
@@ -233,11 +408,7 @@ export default function Agenda() {
             </div>
             <div className="chips" style={{ marginTop: 14, justifyContent: "center" }}>
               {PRESETS.map((p) => (
-                <div
-                  key={p}
-                  className={`chip ${horas === p ? "active" : ""}`}
-                  onClick={() => setHoras(p)}
-                >
+                <div key={p} className={`chip ${horas === p ? "active" : ""}`} onClick={() => setHoras(p)}>
                   {p}h
                 </div>
               ))}
@@ -249,7 +420,7 @@ export default function Agenda() {
           {salvando ? "Salvando..." : "Salvar dia"}
         </button>
         {diaSel && mapa[diaSel] && (
-          <button className="btn ghost block" style={{ marginTop: 10 }} onClick={limpar}>
+          <button className="btn ghost block" style={{ marginTop: 10 }} onClick={limparDia}>
             Limpar plano do dia
           </button>
         )}

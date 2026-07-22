@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..deps import get_current_user
 from ..models import Agenda, User
-from ..schemas import AgendaOut, AgendaResumo, AgendaUpsert
+from ..schemas import AgendaBulk, AgendaOut, AgendaResumo, AgendaUpsert
 
 router = APIRouter(prefix="/api/agenda", tags=["agenda"])
 
@@ -59,6 +59,46 @@ def resumo(
         horas_planejadas=horas,
         media_horas=media,
     )
+
+
+@router.post("/bulk", response_model=list[AgendaOut])
+def bulk(dados: AgendaBulk, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Aplica o mesmo plano a varios dias de uma vez (pincel/arrastar).
+
+    - limpar=True remove os dias informados.
+    - senao, faz upsert de cada dia com trabalhar/horas_alvo.
+    """
+    if not dados.datas:
+        return []
+
+    existentes = {
+        d.data: d
+        for d in db.scalars(
+            select(Agenda).where(Agenda.usuario_id == user.id, Agenda.data.in_(dados.datas))
+        ).all()
+    }
+
+    if dados.limpar:
+        for d in existentes.values():
+            db.delete(d)
+        db.commit()
+        return []
+
+    horas = dados.horas_alvo if dados.trabalhar else 0.0
+    resultado: list[Agenda] = []
+    for dt in dados.datas:
+        e = existentes.get(dt)
+        if e:
+            e.trabalhar = dados.trabalhar
+            e.horas_alvo = horas
+        else:
+            e = Agenda(usuario_id=user.id, data=dt, trabalhar=dados.trabalhar, horas_alvo=horas)
+            db.add(e)
+        resultado.append(e)
+    db.commit()
+    for e in resultado:
+        db.refresh(e)
+    return resultado
 
 
 @router.put("", response_model=AgendaOut)

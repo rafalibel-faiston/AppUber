@@ -216,6 +216,13 @@ class AgendaOut(BaseModel):
     nota: str | None = None
 
 
+class AgendaBulk(BaseModel):
+    datas: list[date]
+    trabalhar: bool = True
+    horas_alvo: float = Field(default=0.0, ge=0, le=24)
+    limpar: bool = False  # se True, remove os dias (ignora trabalhar/horas)
+
+
 class AgendaResumo(BaseModel):
     inicio: date
     fim: date
