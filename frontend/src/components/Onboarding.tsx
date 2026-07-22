@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { ehAppNativo, pedirLocalizacaoNativa, pedirNotificacaoNativa } from "../lib/nativo";
 
 const FLAG = "volante_onboarded";
 
@@ -13,7 +14,13 @@ export default function Onboarding({ onConcluir }: { onConcluir: () => void }) {
   const [loc, setLoc] = useState<Estado>("idle");
   const [notif, setNotif] = useState<Estado>("idle");
 
-  function pedirLocalizacao() {
+  async function pedirLocalizacao() {
+    // No app nativo, usa o plugin (dispara a caixinha do Android).
+    if (ehAppNativo()) {
+      const ok = await pedirLocalizacaoNativa();
+      setLoc(ok ? "ok" : "negado");
+      return;
+    }
     if (!("geolocation" in navigator)) {
       setLoc("indisponivel");
       return;
@@ -26,6 +33,11 @@ export default function Onboarding({ onConcluir }: { onConcluir: () => void }) {
   }
 
   async function pedirNotificacoes() {
+    if (ehAppNativo()) {
+      const ok = await pedirNotificacaoNativa();
+      setNotif(ok ? "ok" : "negado");
+      return;
+    }
     if (!("Notification" in window)) {
       setNotif("indisponivel");
       return;

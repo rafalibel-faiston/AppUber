@@ -52,3 +52,27 @@ export async function abrirAcessibilidade(): Promise<void> {
     /* ignora */
   }
 }
+
+// Dispara a caixinha nativa de permissão de localização (Android/iOS).
+export async function pedirLocalizacaoNativa(): Promise<boolean> {
+  if (!ehAppNativo()) return false;
+  try {
+    const { Geolocation } = await import("@capacitor/geolocation");
+    const r = await Geolocation.requestPermissions();
+    return r.location === "granted" || r.coarseLocation === "granted";
+  } catch {
+    return false;
+  }
+}
+
+// Dispara a caixinha nativa de permissão de notificações.
+export async function pedirNotificacaoNativa(): Promise<boolean> {
+  if (!ehAppNativo()) return false;
+  try {
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    const r = await LocalNotifications.requestPermissions();
+    return r.display === "granted";
+  } catch {
+    return false;
+  }
+}
