@@ -37,7 +37,7 @@ export default function App() {
           <Routes location={location} key={location.pathname}>
             <Route path="/login" element={<Navigate to="/" replace />} />
             <Route path="/" element={<Protected><Locadora /></Protected>} />
-            <Route path="/ajuda" element={<Protected><Guia /></Protected>} />
+            <Route path="/ajuda" element={<Guia />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>
@@ -82,14 +82,7 @@ export default function App() {
               </Protected>
             }
           />
-          <Route
-            path="/ajuda"
-            element={
-              <Protected>
-                <Guia />
-              </Protected>
-            }
-          />
+          <Route path="/ajuda" element={<Guia />} />
           <Route
             path="/metas"
             element={

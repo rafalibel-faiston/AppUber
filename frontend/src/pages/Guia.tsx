@@ -201,9 +201,11 @@ export default function Guia() {
     <Page>
       <div className="topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button className="icon-btn" onClick={() => navigate("/")} aria-label="Voltar">‹</button>
+          {user && (
+            <button className="icon-btn" onClick={() => navigate("/")} aria-label="Voltar">‹</button>
+          )}
           <div>
-            <div className="hello">Guia do app</div>
+            <div className="hello">Guia do app · Volante</div>
             <div className="name" style={{ fontSize: 22 }}>Ajuda</div>
           </div>
         </div>
