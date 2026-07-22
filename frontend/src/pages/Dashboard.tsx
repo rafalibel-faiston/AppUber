@@ -9,7 +9,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useTurno } from "../lib/turno";
 import { brl, hojeISO } from "../lib/format";
-import type { AgendaDia, Aluguel, DashboardResumo, Insight, SerieDia } from "../lib/types";
+import type { AgendaDia, Aluguel, Carro, DashboardResumo, Insight, SerieDia } from "../lib/types";
 
 type Periodo = "diaria" | "semanal" | "mensal";
 const labels: Record<Periodo, string> = { diaria: "Hoje", semanal: "Semana", mensal: "Mês" };
@@ -30,6 +30,9 @@ export default function Dashboard() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [aluguel, setAluguel] = useState<Aluguel | null>(null);
   const [avisoFechado, setAvisoFechado] = useState(false);
+  const [alugSheet, setAlugSheet] = useState(false);
+  const [carrosDisp, setCarrosDisp] = useState<Carro[]>([]);
+  const [trocando, setTrocando] = useState(false);
 
   useEffect(() => {
     setCarregando(true);
@@ -55,6 +58,23 @@ export default function Dashboard() {
   function irPara(rota: string) {
     setMenu(false);
     navigate(rota);
+  }
+
+  function abrirAluguel() {
+    setAlugSheet(true);
+    api.get<Carro[]>("/carros/disponiveis").then(setCarrosDisp).catch(() => setCarrosDisp([]));
+  }
+
+  async function pedirTroca(carroId: string) {
+    if (trocando) return;
+    setTrocando(true);
+    try {
+      const atual = await api.post<Aluguel>("/alugueis/meu/trocar", { carro_id: carroId });
+      setAluguel(atual);
+      setAlugSheet(false);
+    } finally {
+      setTrocando(false);
+    }
   }
 
   const iniciais = user?.nome.slice(0, 2).toUpperCase() ?? "??";
@@ -95,7 +115,7 @@ export default function Dashboard() {
       </button>
 
       {aluguel && (
-        <div className={`aluguel-card ${aluguel.status}`}>
+        <button className={`aluguel-card ${aluguel.status}`} onClick={abrirAluguel}>
           <div className="al-ico">🔑</div>
           <div className="al-body">
             <div className="al-top">
@@ -103,17 +123,19 @@ export default function Dashboard() {
               <span className="al-val">{brl(aluguel.valor)}</span>
             </div>
             <div className="al-sub">
-              {aluguel.status === "atrasado"
+              {aluguel.troca_status === "solicitada"
+                ? `⇄ Troca pedida${aluguel.carro_desejado ? ` para ${aluguel.carro_desejado}` : ""}`
+                : aluguel.status === "atrasado"
                 ? "⚠️ Pagamento em atraso"
                 : aluguel.status === "em_dia"
                 ? "✓ Em dia"
                 : aluguel.dias_restantes !== null
                 ? `Vence em ${aluguel.dias_restantes} ${aluguel.dias_restantes === 1 ? "dia" : "dias"}`
                 : "Aluguel ativo"}
-              {aluguel.periodicidade === "semanal" ? " · semanal" : " · mensal"}
+              {aluguel.periodicidade === "semanal" ? " · semanal" : " · mensal"} · toque para ver
             </div>
           </div>
-        </div>
+        </button>
       )}
 
       {(rodando || pontos.length > 0) && (
@@ -260,6 +282,56 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <Sheet open={alugSheet} title="Aluguel do carro" onClose={() => setAlugSheet(false)}>
+        {aluguel && (
+          <>
+            <div className="hero" style={{ marginBottom: 16, padding: 16 }}>
+              <div className="label">{aluguel.carro ?? "Seu carro"}</div>
+              <div className="big pos" style={{ fontSize: 28 }}>{brl(aluguel.valor)}</div>
+              <div className="sub">
+                {aluguel.periodicidade === "semanal" ? "por semana" : "por mês"}
+                {aluguel.dias_restantes !== null && <> · vence em {aluguel.dias_restantes} {aluguel.dias_restantes === 1 ? "dia" : "dias"}</>}
+              </div>
+            </div>
+
+            {aluguel.troca_status === "solicitada" ? (
+              <div className="aviso-note atencao">
+                <span className="an-ico">⇄</span>
+                <span className="an-txt">
+                  <b>Troca solicitada.</b> Você pediu {aluguel.carro_desejado ? <>o <b>{aluguel.carro_desejado}</b></> : "outro carro"}. Aguarde a locadora aprovar.
+                </span>
+              </div>
+            ) : (
+              <>
+                <div className="section-title" style={{ marginTop: 4 }}><h3>Trocar de carro</h3></div>
+                {carrosDisp.length === 0 ? (
+                  <div className="empty" style={{ padding: "24px 10px" }}>
+                    <div className="emoji">🚗</div>
+                    <p>Nenhum outro carro disponível na locadora agora.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="hint" style={{ marginBottom: 10 }}>Escolha um carro livre e a locadora recebe seu pedido.</div>
+                    {carrosDisp.map((c) => (
+                      <button key={c.id} className="row" style={{ width: "100%", textAlign: "left" }} disabled={trocando} onClick={() => pedirTroca(c.id)}>
+                        <div className="ic">🚗</div>
+                        <div className="body">
+                          <div className="t">{c.modelo}</div>
+                          <div className="s">
+                            {[c.placa, c.ano, c.cor, c.combustivel].filter(Boolean).join(" · ") || "—"}
+                          </div>
+                        </div>
+                        <span className="chev" style={{ fontSize: 22, color: "var(--text-faint)" }}>›</span>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </Sheet>
 
       <Sheet open={menu} title="Menu" onClose={() => setMenu(false)}>
         <div className="menu-list">

@@ -871,13 +871,36 @@ a {
   display: flex;
   align-items: center;
   gap: 14px;
+  width: 100%;
+  text-align: left;
   padding: 14px 16px;
   margin-bottom: 18px;
   border-radius: 16px;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-left: 4px solid var(--info);
+  transition: transform 0.12s;
 }
+.aluguel-card:active { transform: scale(0.99); }
+
+/* seletor de carro do catalogo (criar aluguel) */
+.carro-pick { display: grid; gap: 8px; }
+.carro-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: left;
+  transition: all 0.15s;
+}
+.carro-opt.active { border-color: var(--accent); background: var(--surface-3); }
+.carro-opt b { font-size: 14.5px; font-weight: 600; }
+.carro-opt small { font-size: 12px; color: var(--text-dim); }
 .aluguel-card.atrasado { border-left-color: var(--neg); background: rgba(255, 93, 108, 0.06); }
 .aluguel-card.em_dia { border-left-color: var(--pos); }
 .aluguel-card .al-ico {

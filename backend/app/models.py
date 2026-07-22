@@ -104,6 +104,26 @@ class Gasto(Base):
     usuario: Mapped["User"] = relationship(back_populates="gastos")
 
 
+class Carro(Base):
+    """Um carro do catalogo de uma locadora. Fica indisponivel enquanto tem
+    um aluguel ativo vinculado a ele."""
+    __tablename__ = "carros"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    locadora_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), index=True)
+
+    modelo: Mapped[str] = mapped_column(String, nullable=False)     # ex: "Chevrolet Onix 2022"
+    placa: Mapped[str | None] = mapped_column(String, nullable=True)
+    cor: Mapped[str | None] = mapped_column(String, nullable=True)
+    ano: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    km: Mapped[int | None] = mapped_column(Integer, nullable=True)          # odometro
+    combustivel: Mapped[str | None] = mapped_column(String, nullable=True)  # flex / gnv / etc
+    valor_sugerido: Mapped[float | None] = mapped_column(Float, nullable=True)  # aluguel sugerido
+    observacao: Mapped[str | None] = mapped_column(String, nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Aluguel(Base):
     """Aluguel de carro que uma locadora atribui a um motorista (pelo e-mail).
     O motorista, se tiver conta com esse e-mail, ve o aluguel no app dele."""
@@ -114,7 +134,10 @@ class Aluguel(Base):
     motorista_email: Mapped[str] = mapped_column(String, index=True)
     motorista_id: Mapped[str | None] = mapped_column(ForeignKey("usuarios.id"), nullable=True, index=True)
 
-    carro: Mapped[str | None] = mapped_column(String, nullable=True)   # ex: "Onix ABC1D23"
+    carro: Mapped[str | None] = mapped_column(String, nullable=True)   # texto (legado/exibicao)
+    carro_id: Mapped[str | None] = mapped_column(ForeignKey("carros.id"), nullable=True, index=True)
+    carro_desejado_id: Mapped[str | None] = mapped_column(ForeignKey("carros.id"), nullable=True)  # troca pedida
+    troca_status: Mapped[str | None] = mapped_column(String, nullable=True)  # None | "solicitada"
     valor: Mapped[float] = mapped_column(Float, nullable=False)
     periodicidade: Mapped[str] = mapped_column(String, default="semanal")  # semanal | mensal
     dia_vencimento: Mapped[int] = mapped_column(Integer, default=1)    # semanal: 0=Seg..6=Dom / mensal: 1..31

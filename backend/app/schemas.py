@@ -201,10 +201,47 @@ class MetaOut(MetaBase):
     id: str
 
 
+# ----- Catalogo de carros -----
+class CarroBase(BaseModel):
+    modelo: str = Field(min_length=1, max_length=120)
+    placa: str | None = None
+    cor: str | None = None
+    ano: int | None = Field(default=None, ge=1950, le=2100)
+    km: int | None = Field(default=None, ge=0)
+    combustivel: str | None = None
+    valor_sugerido: float | None = Field(default=None, ge=0)
+    observacao: str | None = None
+
+
+class CarroCreate(CarroBase):
+    pass
+
+
+class CarroUpdate(BaseModel):
+    modelo: str | None = Field(default=None, min_length=1, max_length=120)
+    placa: str | None = None
+    cor: str | None = None
+    ano: int | None = Field(default=None, ge=1950, le=2100)
+    km: int | None = Field(default=None, ge=0)
+    combustivel: str | None = None
+    valor_sugerido: float | None = Field(default=None, ge=0)
+    observacao: str | None = None
+    ativo: bool | None = None
+
+
+class CarroOut(CarroBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    ativo: bool
+    disponivel: bool = True            # calculado: sem aluguel ativo
+    motorista_atual: str | None = None  # nome de quem esta com ele, se alugado
+
+
 # ----- Aluguel de carro -----
 class AluguelCreate(BaseModel):
     motorista_email: EmailStr
-    carro: str | None = None
+    carro_id: str | None = None
+    carro: str | None = None           # texto livre (se nao usar o catalogo)
     valor: float = Field(gt=0)
     periodicidade: str = Field(default="semanal", pattern="^(semanal|mensal)$")
     dia_vencimento: int = Field(default=1, ge=0, le=31)
@@ -225,15 +262,23 @@ class AluguelOut(BaseModel):
     motorista_nome: str | None = None
     vinculado: bool = False           # se o e-mail ja tem conta de motorista
     carro: str | None = None
+    carro_id: str | None = None
     valor: float
     periodicidade: str
     dia_vencimento: int
     ativo: bool
+    # troca de carro
+    troca_status: str | None = None
+    carro_desejado: str | None = None
     # calculados:
     prox_vencimento: date | None = None
     dias_restantes: int | None = None
     status: str = "pendente"          # em_dia | pendente | atrasado
     ultimo_pagamento: date | None = None
+
+
+class TrocaSolicitar(BaseModel):
+    carro_id: str
 
 
 class PagamentoCreate(BaseModel):

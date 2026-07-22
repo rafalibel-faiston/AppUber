@@ -7,16 +7,34 @@ export interface User {
   papel: Papel;
 }
 
+export interface Carro {
+  id: string;
+  modelo: string;
+  placa: string | null;
+  cor: string | null;
+  ano: number | null;
+  km: number | null;
+  combustivel: string | null;
+  valor_sugerido: number | null;
+  observacao: string | null;
+  ativo: boolean;
+  disponivel: boolean;
+  motorista_atual: string | null;
+}
+
 export interface Aluguel {
   id: string;
   motorista_email: string;
   motorista_nome: string | null;
   vinculado: boolean;
   carro: string | null;
+  carro_id: string | null;
   valor: number;
   periodicidade: "semanal" | "mensal";
   dia_vencimento: number;
   ativo: boolean;
+  troca_status: string | null;
+  carro_desejado: string | null;
   prox_vencimento: string | null;
   dias_restantes: number | null;
   status: "em_dia" | "pendente" | "atrasado" | "inativo";

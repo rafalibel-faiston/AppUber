@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user, get_locadora
-from ..models import Aluguel, PagamentoAluguel, User
+from ..models import Aluguel, Carro, PagamentoAluguel, User
 from ..schemas import (
     AluguelCreate,
     AluguelOut,
@@ -17,6 +17,7 @@ from ..schemas import (
     LocadoraResumo,
     PagamentoCreate,
     PagamentoOut,
+    TrocaSolicitar,
 )
 
 router = APIRouter(prefix="/api/alugueis", tags=["alugueis"])
@@ -81,16 +82,24 @@ def _montar_out(db: Session, a: Aluguel) -> AluguelOut:
         mot = db.get(User, a.motorista_id)
         nome = mot.nome if mot else None
 
+    desejado = None
+    if a.carro_desejado_id:
+        cd = db.get(Carro, a.carro_desejado_id)
+        desejado = cd.modelo if cd else None
+
     return AluguelOut(
         id=a.id,
         motorista_email=a.motorista_email,
         motorista_nome=nome,
         vinculado=a.motorista_id is not None,
         carro=a.carro,
+        carro_id=a.carro_id,
         valor=a.valor,
         periodicidade=a.periodicidade,
         dia_vencimento=a.dia_vencimento,
         ativo=a.ativo,
+        troca_status=a.troca_status,
+        carro_desejado=desejado,
         prox_vencimento=prox,
         dias_restantes=(prox - hoje).days,
         status=status,
@@ -103,11 +112,24 @@ def _montar_out(db: Session, a: Aluguel) -> AluguelOut:
 def criar(dados: AluguelCreate, db: Session = Depends(get_db), loc: User = Depends(get_locadora)):
     email = dados.motorista_email.lower()
     mot = db.scalar(select(User).where(User.email == email))
+
+    carro_txt = dados.carro
+    carro_id = None
+    if dados.carro_id:
+        carro = db.get(Carro, dados.carro_id)
+        if not carro or carro.locadora_id != loc.id:
+            raise HTTPException(status_code=404, detail="Carro nao encontrado")
+        if db.scalar(select(Aluguel).where(Aluguel.carro_id == carro.id, Aluguel.ativo.is_(True))):
+            raise HTTPException(status_code=409, detail="Esse carro ja esta alugado")
+        carro_id = carro.id
+        carro_txt = f"{carro.modelo}{f' {carro.placa}' if carro.placa else ''}"
+
     a = Aluguel(
         locadora_id=loc.id,
         motorista_email=email,
         motorista_id=mot.id if mot else None,
-        carro=dados.carro,
+        carro=carro_txt,
+        carro_id=carro_id,
         valor=dados.valor,
         periodicidade=dados.periodicidade,
         dia_vencimento=dados.dia_vencimento,
@@ -132,8 +154,8 @@ def resumo(db: Session = Depends(get_db), loc: User = Depends(get_locadora)):
         select(Aluguel).where(Aluguel.locadora_id == loc.id, Aluguel.ativo.is_(True))
     ).all()
     outs = [_montar_out(db, a) for a in itens]
-    # receita mensal prevista: semanal ~= 4.345 semanas/mes
-    receita = sum(a.valor * (4.345 if a.periodicidade == "semanal" else 1.0) for a in itens)
+    # receita mensal estimada: semanal conta ~4.33 semanas no mes
+    receita = round(sum(a.valor * (4.33 if a.periodicidade == "semanal" else 1.0) for a in itens))
     a_vencer = sum(1 for o in outs if o.status != "atrasado" and o.dias_restantes is not None and o.dias_restantes <= 7)
     atrasados = sum(1 for o in outs if o.status == "atrasado")
     return LocadoraResumo(
@@ -206,6 +228,35 @@ def listar_pagamentos(aluguel_id: str, db: Session = Depends(get_db), loc: User 
     ).all()
 
 
+@router.post("/{aluguel_id}/aprovar-troca", response_model=AluguelOut)
+def aprovar_troca(aluguel_id: str, db: Session = Depends(get_db), loc: User = Depends(get_locadora)):
+    a = _obter_da_locadora(db, aluguel_id, loc)
+    if a.troca_status != "solicitada" or not a.carro_desejado_id:
+        raise HTTPException(status_code=400, detail="Nao ha troca pendente")
+    novo = db.get(Carro, a.carro_desejado_id)
+    if not novo:
+        raise HTTPException(status_code=404, detail="Carro desejado nao existe mais")
+    if db.scalar(select(Aluguel).where(Aluguel.carro_id == novo.id, Aluguel.ativo.is_(True), Aluguel.id != a.id)):
+        raise HTTPException(status_code=409, detail="O carro desejado ja foi alugado")
+    a.carro_id = novo.id
+    a.carro = f"{novo.modelo}{f' {novo.placa}' if novo.placa else ''}"
+    a.carro_desejado_id = None
+    a.troca_status = None
+    db.commit()
+    db.refresh(a)
+    return _montar_out(db, a)
+
+
+@router.post("/{aluguel_id}/recusar-troca", response_model=AluguelOut)
+def recusar_troca(aluguel_id: str, db: Session = Depends(get_db), loc: User = Depends(get_locadora)):
+    a = _obter_da_locadora(db, aluguel_id, loc)
+    a.carro_desejado_id = None
+    a.troca_status = None
+    db.commit()
+    db.refresh(a)
+    return _montar_out(db, a)
+
+
 # ---------- motorista ----------
 @router.get("/meu", response_model=list[AluguelOut])
 def meu_aluguel(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -217,3 +268,26 @@ def meu_aluguel(db: Session = Depends(get_db), user: User = Depends(get_current_
         )
     ).all()
     return [_montar_out(db, a) for a in itens]
+
+
+@router.post("/meu/trocar", response_model=AluguelOut)
+def solicitar_troca(dados: TrocaSolicitar, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Motorista pede pra trocar pelo carro escolhido (da mesma locadora)."""
+    a = db.scalar(
+        select(Aluguel).where(
+            Aluguel.ativo.is_(True),
+            (Aluguel.motorista_id == user.id) | (Aluguel.motorista_email == user.email),
+        )
+    )
+    if not a:
+        raise HTTPException(status_code=404, detail="Voce nao tem aluguel ativo")
+    carro = db.get(Carro, dados.carro_id)
+    if not carro or carro.locadora_id != a.locadora_id or not carro.ativo:
+        raise HTTPException(status_code=404, detail="Carro indisponivel")
+    if db.scalar(select(Aluguel).where(Aluguel.carro_id == carro.id, Aluguel.ativo.is_(True))):
+        raise HTTPException(status_code=409, detail="Esse carro ja esta alugado")
+    a.carro_desejado_id = carro.id
+    a.troca_status = "solicitada"
+    db.commit()
+    db.refresh(a)
+    return _montar_out(db, a)
