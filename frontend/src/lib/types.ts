@@ -171,6 +171,26 @@ export interface Insight {
   texto: string;
 }
 
+export interface Conta {
+  id: string;
+  descricao: string;
+  categoria: string;
+  valor_parcela: number;
+  total_parcelas: number | null;
+  parcelas_pagas: number;
+  dia_vencimento: number | null;
+  ativo: boolean;
+  parcelas_restantes: number | null;
+  valor_restante: number | null;
+  quitada: boolean;
+}
+
+export interface ContasResumo {
+  total_mensal: number;
+  total_restante: number;
+  num_ativas: number;
+}
+
 export interface DashboardResumo {
   periodo: string;
   inicio: string;

@@ -173,6 +173,23 @@ class Agenda(Base):
     criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class Conta(Base):
+    """Compromisso financeiro recorrente: financiamento, aluguel, seguro, cartão..."""
+    __tablename__ = "contas"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    usuario_id: Mapped[str] = mapped_column(ForeignKey("usuarios.id"), index=True)
+
+    descricao: Mapped[str] = mapped_column(String, nullable=False)
+    categoria: Mapped[str] = mapped_column(String, default="financiamento")
+    valor_parcela: Mapped[float] = mapped_column(Float, nullable=False)
+    total_parcelas: Mapped[int | None] = mapped_column(Integer, nullable=True)  # None = recorrente sem fim
+    parcelas_pagas: Mapped[int] = mapped_column(Integer, default=0)
+    dia_vencimento: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1..31
+    ativo: Mapped[bool] = mapped_column(Boolean, default=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
 class Meta(Base):
     __tablename__ = "metas"
 

@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Corridas from "./pages/Corridas";
 import Gastos from "./pages/Gastos";
 import Metas from "./pages/Metas";
+import Contas from "./pages/Contas";
 import Ajustes from "./pages/Ajustes";
 import Agenda from "./pages/Agenda";
 import Locadora from "./pages/Locadora";
@@ -88,6 +89,14 @@ export default function App() {
             element={
               <Protected>
                 <Metas />
+              </Protected>
+            }
+          />
+          <Route
+            path="/contas"
+            element={
+              <Protected>
+                <Contas />
               </Protected>
             }
           />

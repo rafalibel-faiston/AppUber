@@ -337,12 +337,14 @@ a {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--text-faint);
-  padding: 6px 6px;
+  padding: 6px 3px;
   transition: color 0.2s;
+  flex: 1;
+  min-width: 0;
 }
-.tabbar a .ico { font-size: 21px; line-height: 1; }
+.tabbar a .ico { font-size: 19px; line-height: 1; }
 .tabbar a.active { color: var(--accent); }
 
 .fab {

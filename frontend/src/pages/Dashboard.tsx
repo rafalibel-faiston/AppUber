@@ -351,6 +351,14 @@ export default function Dashboard() {
             </span>
             <span className="chev">›</span>
           </button>
+          <button className="menu-item" onClick={() => irPara("/contas")}>
+            <span className="mi-ico">💳</span>
+            <span className="mi-txt">
+              <b>Contas</b>
+              <small>Financiamento, aluguel, seguro e cartão</small>
+            </span>
+            <span className="chev">›</span>
+          </button>
           <button className="menu-item" onClick={() => irPara("/ajustes")}>
             <span className="mi-ico">⚙️</span>
             <span className="mi-txt">

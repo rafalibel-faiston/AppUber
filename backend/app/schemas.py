@@ -335,6 +335,45 @@ class AgendaResumo(BaseModel):
     media_horas: float        # horas_planejadas / dias_planejados
 
 
+# ----- Contas (financiamento/aluguel/seguro/cartão) -----
+class ContaBase(BaseModel):
+    descricao: str
+    categoria: str = "financiamento"
+    valor_parcela: float = Field(gt=0)
+    total_parcelas: int | None = Field(default=None, gt=0)
+    parcelas_pagas: int = Field(default=0, ge=0)
+    dia_vencimento: int | None = Field(default=None, ge=1, le=31)
+    ativo: bool = True
+
+
+class ContaCreate(ContaBase):
+    pass
+
+
+class ContaUpdate(BaseModel):
+    descricao: str | None = None
+    categoria: str | None = None
+    valor_parcela: float | None = Field(default=None, gt=0)
+    total_parcelas: int | None = Field(default=None, gt=0)
+    parcelas_pagas: int | None = Field(default=None, ge=0)
+    dia_vencimento: int | None = Field(default=None, ge=1, le=31)
+    ativo: bool | None = None
+
+
+class ContaOut(ContaBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    parcelas_restantes: int | None = None
+    valor_restante: float | None = None
+    quitada: bool = False
+
+
+class ContasResumo(BaseModel):
+    total_mensal: float       # soma das parcelas ativas
+    total_restante: float     # soma do que falta pagar (onde há total de parcelas)
+    num_ativas: int
+
+
 # ----- Dashboard -----
 class DashboardResumo(BaseModel):
     periodo: str
