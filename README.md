@@ -123,7 +123,8 @@ Quer testar no celular direto do seu PC, sem subir ainda?
 
 ## 🗺️ Roadmap (próximas fases)
 
-Já entregue: **Auth · Dashboard · Corridas · Gastos · Metas · Agenda (calendário)**.
+Já entregue: **Auth · Dashboard · Corridas · Gastos · Metas · Agenda (calendário) ·
+Ganhos visuais + avisos automáticos**.
 
 > **Navegação (3 abas):** a barra inferior tem só **Painel · Corridas · Gastos** —
 > as funções principais a 1 toque. **Agenda** fica num atalho no Painel, e

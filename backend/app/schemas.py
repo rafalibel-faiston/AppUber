@@ -249,3 +249,18 @@ class DashboardResumo(BaseModel):
     ganho_por_corrida: float
     meta_valor: float | None = None
     meta_progresso: float | None = None  # 0..1
+
+
+class SerieDia(BaseModel):
+    data: date
+    ganho: float
+    gastos: float
+    lucro: float
+    corridas: int
+
+
+class Insight(BaseModel):
+    nivel: str   # critico | atencao | bom | info
+    icone: str
+    titulo: str
+    texto: str

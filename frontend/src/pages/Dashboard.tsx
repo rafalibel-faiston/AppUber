@@ -4,11 +4,12 @@ import Page from "../components/Page";
 import Sheet from "../components/Sheet";
 import TurnoControl from "../components/TurnoControl";
 import MapaRota from "../components/MapaRota";
+import GraficoGanhos from "../components/GraficoGanhos";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useTurno } from "../lib/turno";
 import { brl, hojeISO } from "../lib/format";
-import type { AgendaDia, DashboardResumo } from "../lib/types";
+import type { AgendaDia, DashboardResumo, Insight, SerieDia } from "../lib/types";
 
 type Periodo = "diaria" | "semanal" | "mensal";
 const labels: Record<Periodo, string> = { diaria: "Hoje", semanal: "Semana", mensal: "Mês" };
@@ -25,6 +26,8 @@ export default function Dashboard() {
   const [mapaFull, setMapaFull] = useState(false);
   const [menu, setMenu] = useState(false);
   const [planoHoje, setPlanoHoje] = useState<AgendaDia | null>(null);
+  const [serie, setSerie] = useState<SerieDia[]>([]);
+  const [insights, setInsights] = useState<Insight[]>([]);
 
   useEffect(() => {
     setCarregando(true);
@@ -42,7 +45,9 @@ export default function Dashboard() {
       .get<AgendaDia[]>(`/agenda?inicio=${hoje}&fim=${hoje}`)
       .then((l) => setPlanoHoje(l[0] ?? null))
       .catch(() => setPlanoHoje(null));
-  }, []);
+    api.get<SerieDia[]>("/dashboard/serie?dias=14").then(setSerie).catch(() => setSerie([]));
+    api.get<Insight[]>("/dashboard/insights").then(setInsights).catch(() => setInsights([]));
+  }, [recarga]);
 
   function irPara(rota: string) {
     setMenu(false);
@@ -102,6 +107,20 @@ export default function Dashboard() {
       {rodando && gpsErro && (
         <div className="error-msg" style={{ marginBottom: 18 }}>
           GPS: {gpsErro}. Ative a localização e mantenha o app aberto para traçar a rota.
+        </div>
+      )}
+
+      {insights.length > 0 && (
+        <div className="avisos">
+          {insights.map((a, i) => (
+            <div key={i} className={`aviso ${a.nivel}`}>
+              <div className="av-ico">{a.icone}</div>
+              <div className="av-body">
+                <div className="av-tit">{a.titulo}</div>
+                <div className="av-txt">{a.texto}</div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -190,6 +209,15 @@ export default function Dashboard() {
               <div className="v">{brl(resumo.ganho_bruto)}</div>
             </div>
           </div>
+        </>
+      )}
+
+      {serie.length > 0 && (
+        <>
+          <div className="section-title" style={{ marginTop: 8 }}>
+            <h3>Ganhos — 14 dias</h3>
+          </div>
+          <GraficoGanhos serie={serie} />
         </>
       )}
 

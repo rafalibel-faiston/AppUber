@@ -105,6 +105,21 @@ export interface PlataformaComparacao {
   percentual: number;
 }
 
+export interface SerieDia {
+  data: string; // YYYY-MM-DD
+  ganho: number;
+  gastos: number;
+  lucro: number;
+  corridas: number;
+}
+
+export interface Insight {
+  nivel: "critico" | "atencao" | "bom" | "info";
+  icone: string;
+  titulo: string;
+  texto: string;
+}
+
 export interface DashboardResumo {
   periodo: string;
   inicio: string;

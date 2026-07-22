@@ -1,6 +1,6 @@
 """Resumo financeiro consolidado para o dashboard."""
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
@@ -8,11 +8,17 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..deps import get_current_user
-from ..models import Corrida, Gasto, Meta, Turno, User
-from ..schemas import DashboardResumo, PlataformaComparacao
+from ..models import Config, Corrida, Gasto, Meta, Turno, User
+from ..schemas import DashboardResumo, Insight, PlataformaComparacao, SerieDia
 from ..utils import intervalo_periodo
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
+
+
+def _brl(v: float) -> str:
+    """Formata em reais no padrao brasileiro (R$ 1.234,56)."""
+    s = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"R$ {s}"
 
 
 @router.get("/resumo", response_model=DashboardResumo)
@@ -139,3 +145,166 @@ def comparar_plataformas(
     ]
     resultado.sort(key=lambda x: x.total, reverse=True)
     return resultado
+
+
+def _lucro_por_dia(db: Session, user_id: str, inicio: date, fim: date) -> dict[date, dict]:
+    """Agrega ganho/gastos/corridas por dia no intervalo (dias sem dado ficam zerados)."""
+    dias = (fim - inicio).days + 1
+    por_dia = {
+        inicio + timedelta(days=i): {"ganho": 0.0, "gastos": 0.0, "corridas": 0}
+        for i in range(dias)
+    }
+    corridas = db.scalars(
+        select(Corrida).where(
+            Corrida.usuario_id == user_id, Corrida.data >= inicio, Corrida.data <= fim
+        )
+    ).all()
+    for c in corridas:
+        d = por_dia.get(c.data)
+        if d:
+            d["ganho"] += c.valor
+            d["corridas"] += 1
+    gastos = db.scalars(
+        select(Gasto).where(
+            Gasto.usuario_id == user_id, Gasto.data >= inicio, Gasto.data <= fim
+        )
+    ).all()
+    for g in gastos:
+        d = por_dia.get(g.data)
+        if d:
+            d["gastos"] += g.valor
+    return por_dia
+
+
+@router.get("/serie", response_model=list[SerieDia])
+def serie(
+    dias: int = Query(14, ge=1, le=90),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Serie diaria de lucro (ganho - gastos) para o grafico dos ultimos N dias."""
+    fim = date.today()
+    inicio = fim - timedelta(days=dias - 1)
+    por_dia = _lucro_por_dia(db, user.id, inicio, fim)
+    return [
+        SerieDia(
+            data=dt,
+            ganho=round(v["ganho"], 2),
+            gastos=round(v["gastos"], 2),
+            lucro=round(v["ganho"] - v["gastos"], 2),
+            corridas=v["corridas"],
+        )
+        for dt, v in sorted(por_dia.items())
+    ]
+
+
+@router.get("/insights", response_model=list[Insight])
+def insights(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Avisos automaticos (critico/atencao/bom) a partir dos numeros do motorista."""
+    cfg = db.scalar(select(Config).where(Config.usuario_id == user.id))
+    custo_km = 0.0
+    alvo_km = 0.0
+    if cfg and cfg.consumo_km_l > 0:
+        custo_km = round(cfg.preco_combustivel / cfg.consumo_km_l + cfg.manutencao_por_km, 3)
+        alvo_km = cfg.meta_lucro_por_km if cfg.meta_lucro_por_km > 0 else custo_km
+
+    # --- Semana atual ---
+    ini_s, fim_s = intervalo_periodo("semanal")
+    corr_s = db.scalars(
+        select(Corrida).where(
+            Corrida.usuario_id == user.id, Corrida.data >= ini_s, Corrida.data <= fim_s
+        )
+    ).all()
+    ganho_s = sum(c.valor for c in corr_s)
+    km_manual_s = sum(c.km for c in corr_s)
+    turnos_s = db.scalars(
+        select(Turno).where(
+            Turno.usuario_id == user.id, Turno.data >= ini_s, Turno.data <= fim_s
+        )
+    ).all()
+    agora = datetime.utcnow()
+    km_gps_s = sum(t.km or 0.0 for t in turnos_s)
+    km_s = km_gps_s if km_gps_s > 0 else km_manual_s
+    gastos_s = db.scalar(
+        select(func.coalesce(func.sum(Gasto.valor), 0.0)).where(
+            Gasto.usuario_id == user.id, Gasto.data >= ini_s, Gasto.data <= fim_s
+        )
+    ) or 0.0
+    lucro_s = ganho_s - float(gastos_s)
+
+    meta = db.scalar(
+        select(Meta)
+        .where(Meta.usuario_id == user.id, Meta.periodo == "semanal", Meta.ativo.is_(True))
+        .order_by(Meta.criado_em.desc())
+    )
+
+    # --- Melhor dia (30 dias) ---
+    hoje = date.today()
+    por_dia_30 = _lucro_por_dia(db, user.id, hoje - timedelta(days=29), hoje)
+    melhor_dia, melhor_lucro = None, 0.0
+    for dt, v in por_dia_30.items():
+        lucro = v["ganho"] - v["gastos"]
+        if lucro > melhor_lucro:
+            melhor_dia, melhor_lucro = dt, lucro
+
+    ins: list[Insight] = []
+
+    # Critico: bruto por km abaixo do custo por km
+    if km_s > 0 and custo_km > 0:
+        bruto_km = ganho_s / km_s
+        if bruto_km < custo_km:
+            ins.append(Insight(
+                nivel="critico", icone="🔴", titulo="Rodando no vermelho",
+                texto=f"Esta semana você recebe {_brl(bruto_km)}/km, mas seu custo é "
+                      f"{_brl(custo_km)}/km. Cada km está dando prejuízo.",
+            ))
+
+    # Meta da semana
+    if meta and meta.valor_alvo > 0:
+        if lucro_s >= meta.valor_alvo:
+            ins.append(Insight(
+                nivel="bom", icone="🎉", titulo="Meta da semana batida!",
+                texto=f"Você já fez {_brl(lucro_s)} de lucro — acima da meta de "
+                      f"{_brl(meta.valor_alvo)}.",
+            ))
+        else:
+            falta = meta.valor_alvo - max(lucro_s, 0)
+            pct = round(max(lucro_s, 0) / meta.valor_alvo * 100)
+            ins.append(Insight(
+                nivel="atencao", icone="🟡", titulo="Quase lá na meta",
+                texto=f"Faltam {_brl(falta)} pra bater a meta da semana ({pct}%).",
+            ))
+
+    # Bom: lucro por km saudavel
+    if km_s > 0 and alvo_km > 0:
+        lpk = lucro_s / km_s
+        if lpk >= alvo_km:
+            ins.append(Insight(
+                nivel="bom", icone="🟢", titulo="Seu km está valendo a pena",
+                texto=f"Lucro de {_brl(lpk)}/km nesta semana — acima do seu alvo.",
+            ))
+
+    # Bom: melhor dia
+    if melhor_dia and melhor_lucro > 0:
+        dstr = melhor_dia.strftime("%d/%m")
+        ins.append(Insight(
+            nivel="bom", icone="⭐", titulo="Seu melhor dia (30 dias)",
+            texto=f"{dstr} rendeu {_brl(melhor_lucro)} de lucro líquido.",
+        ))
+
+    # Atencao: custo do carro nao configurado
+    if not cfg or custo_km == 0:
+        ins.append(Insight(
+            nivel="atencao", icone="⚙️", titulo="Configure o custo do carro",
+            texto="Sem o custo por km, o lucro real fica incompleto. Faça isso em Ajustes.",
+        ))
+
+    if not ins:
+        ins.append(Insight(
+            nivel="info", icone="📊", titulo="Sem dados suficientes ainda",
+            texto="Registre corridas e gastos pra receber avisos automáticos aqui.",
+        ))
+
+    ordem = {"critico": 0, "atencao": 1, "bom": 2, "info": 3}
+    ins.sort(key=lambda x: ordem.get(x.nivel, 9))
+    return ins[:4]
