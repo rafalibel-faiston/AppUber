@@ -479,6 +479,70 @@ a {
 }
 .sheet h2 { font-size: 20px; margin-bottom: 20px; }
 
+/* ---------- Onboarding de permissões ---------- */
+.onb {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--bg);
+  background-image: var(--bg-grad);
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 22px calc(32px + var(--safe-bottom));
+}
+.onb-inner { width: 100%; max-width: 460px; }
+.onb-logo { font-size: 52px; text-align: center; }
+.onb-titulo {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  margin-top: 10px;
+  letter-spacing: -0.02em;
+}
+.onb-sub {
+  color: var(--text-dim);
+  text-align: center;
+  margin: 8px 0 28px;
+  font-size: 15px;
+}
+.onb-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: border-color 0.25s;
+}
+.onb-card.ok { border-color: rgba(255, 176, 32, 0.5); }
+.onb-ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--surface-3);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.onb-txt { flex: 1; min-width: 0; }
+.onb-txt b { display: block; font-size: 15px; margin-bottom: 3px; }
+.onb-txt small { color: var(--text-dim); font-size: 12.5px; line-height: 1.35; }
+.onb-pular {
+  display: block;
+  width: 100%;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 14px;
+  padding: 14px;
+  margin-top: 4px;
+}
+
 /* ---------- Mapa da rota ---------- */
 .mapa-card {
   position: relative;

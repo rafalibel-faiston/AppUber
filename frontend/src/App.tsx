@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { useAuth } from "./lib/auth";
 import TabBar from "./components/TabBar";
+import Onboarding, { jaFezOnboarding } from "./components/Onboarding";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Corridas from "./pages/Corridas";
@@ -29,6 +31,7 @@ export default function App() {
   const { user } = useAuth();
   const location = useLocation();
   const ehLocadora = user?.papel === "locadora";
+  const [onbOk, setOnbOk] = useState(jaFezOnboarding());
 
   // Locadora tem uma experiencia propria (sem as abas de motorista).
   if (ehLocadora) {
@@ -112,6 +115,7 @@ export default function App() {
         </Routes>
       </AnimatePresence>
       {user && location.pathname !== "/login" && <TabBar />}
+      {user && !onbOk && <Onboarding onConcluir={() => setOnbOk(true)} />}
     </div>
   );
 }
